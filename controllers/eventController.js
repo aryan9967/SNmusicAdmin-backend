@@ -20,7 +20,7 @@ const bucket = admin.storage().bucket()
 
 //function to create our Events details
 /* 
-    request url = http://localhost:8080/api/v1/user/create-event
+    request url = http://localhost:8080/api/v1/event/create-event
     method = POST
     FormData: 
     fields: {
@@ -29,6 +29,17 @@ const bucket = admin.storage().bucket()
     }
     file: { //req.file
       "video": "file",
+    }
+    response: {
+      "success": true,
+      "message": "Student created successfully",
+      "event": {
+        "eventId": "e0cf3d7b-45db-4f06-aed8-12635f2df232",
+        "title": "title2",
+        "description": "desc2",
+        "videoUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/events%2Fe0cf3d7b-45db-4f06-aed8-12635f2df232%2Fviddemo3.mp4?alt=media&token=99e80870-57ea-4c2c-a7c6-f6403b6f42a4",
+        "timestamp": "2024-07-18T20:50:10.233Z"
+      }
     }
 */
 export const createEvent = async (req, res) => {
@@ -104,8 +115,34 @@ export const createEvent = async (req, res) => {
 
 //function to read all our Events details
 /* 
-    request url = http://localhost:8080/api/v1/user/read-all-event
+    request url = http://localhost:8080/api/v1/event/read-all-event
     method = GET
+    response: {
+      "success": true,
+      "message": "events read successfully",
+      "event": [
+        {
+          "eventId": "6638b142-4a0c-4eb8-8ed3-128ec3665e58",
+          "videoUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/events%2F6638b142-4a0c-4eb8-8ed3-128ec3665e58%2Fviddemo1.mp4?alt=media&token=1f1799b7-89d8-4f4d-82b8-8db77e35f5bb",
+          "description": "desc1",
+          "title": "title1",
+          "timestamp": {
+            "_seconds": 1721335767,
+            "_nanoseconds": 946000000
+          }
+        },
+        {
+          "eventId": "e0cf3d7b-45db-4f06-aed8-12635f2df232",
+          "videoUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/events%2Fe0cf3d7b-45db-4f06-aed8-12635f2df232%2Fviddemo3.mp4?alt=media&token=99e80870-57ea-4c2c-a7c6-f6403b6f42a4",
+          "description": "desc2",
+          "title": "title2",
+          "timestamp": {
+            "_seconds": 1721335810,
+            "_nanoseconds": 233000000
+          }
+        }
+      ]
+    }
 */
 
 export const readAllEvent = async (req, res) => {
@@ -130,15 +167,34 @@ export const readAllEvent = async (req, res) => {
 
 //function to read single document of our Events details
 /* 
-    request url = http://localhost:8080/api/v1/user/read-event
+    request url = http://localhost:8080/api/v1/event/read-event
     method = POST
     {
       "eventId": "jjhjhjsagsa" //your doc id
+    }
+    response: {
+      "success": true,
+      "message": "event read successfully",
+      "event": {
+        "eventId": "6638b142-4a0c-4eb8-8ed3-128ec3665e58",
+        "videoUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/events%2F6638b142-4a0c-4eb8-8ed3-128ec3665e58%2Fviddemo1.mp4?alt=media&token=1f1799b7-89d8-4f4d-82b8-8db77e35f5bb",
+        "description": "desc1",
+        "title": "title1",
+        "timestamp": {
+          "_seconds": 1721335767,
+          "_nanoseconds": 946000000
+        }
+      }
     }
 */
 export const readSingleEvent = async (req, res) => {
   try {
     const { eventId } = req.body;
+
+    if (!eventId) {
+      return res.status(400).send({ message: 'Error finding event' });
+    }
+
     var eventData = await readSingleData(process.env.eventsCollection, eventId);
     console.log('success');
 
@@ -159,7 +215,7 @@ export const readSingleEvent = async (req, res) => {
 
 //function to update single our Events details
 /* 
-    request url = http://localhost:8080/api/v1/user/update-event
+    request url = http://localhost:8080/api/v1/event/update-event
     method = POST
     FormData: 
     fields: {
@@ -169,6 +225,14 @@ export const readSingleEvent = async (req, res) => {
     }
     file: { //req.file
       "video": "file",
+    }
+    response: {
+      "success": true,
+      "message": "Student updated successfully",
+      "student": {
+        "description": "desc1_jhjhkhhkjhhkjjhjhkhkjkh",
+        "videoUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/events%2F6638b142-4a0c-4eb8-8ed3-128ec3665e58%2Fviddemo4.mp4?alt=media&token=726d4053-bb5a-48a8-a1a9-b91764cdfb53"
+      }
     }
 */
 export const updateEvent = async (req, res) => {
@@ -254,18 +318,28 @@ export const updateEvent = async (req, res) => {
 
 //function to delete single our Events details
 /* 
-    request url = http://localhost:8080/api/v1/user/delete-event
+    request url = http://localhost:8080/api/v1/event/delete-event
     method = POST
     req.body: 
     {
       "eventId": "eventId"
+    }
+    response: {
+      "success": true,
+      "message": "student deleted successfully",
+      "event": {
+        "_writeTime": {
+          "_seconds": 1721336310,
+          "_nanoseconds": 790740000
+        }
+      }
     }
 */
 export const deleteEvent = async (req, res) => {
   try {
     let { eventId } = req.body;
 
-    if (id) {
+    if (eventId) {
       const validateData = await readSingleData(process.env.eventsCollection, eventId)
       if (validateData) {
         var eventData = await deleteData(process.env.eventsCollection, eventId);

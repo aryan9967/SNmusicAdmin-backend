@@ -20,7 +20,7 @@ const bucket = admin.storage().bucket()
 
 //function to create our Students details
 /* 
-    request url = http://localhost:8080/api/v1/user/create-student
+    request url = http://localhost:8080/api/v1/student/create-student
     method = POST
     FormData: 
     fields: {
@@ -30,6 +30,16 @@ const bucket = admin.storage().bucket()
     file: { //req.file
       "video": "file",
     }
+    response: {
+      "success": true,
+      "message": "Student created successfully",
+      "student": {
+      "studentId": "81d4a19c-683d-4387-9933-e337e1ac50dc",
+      "title": "title3",
+      "description": "desc3",
+      "videoUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/students%2F81d4a19c-683d-4387-9933-e337e1ac50dc%2Fviddemo2.mp4?alt=media&token=acd72563-d7ea-4552-a00e-f60144857426"
+    }
+}
 */
 export const createStudents = async (req, res) => {
   try {
@@ -106,8 +116,26 @@ export const createStudents = async (req, res) => {
 
 //function to read all our Students details
 /* 
-    request url = http://localhost:8080/api/v1/user/read-all-student
+    request url = http://localhost:8080/api/v1/student/read-all-student
     method = GET
+    response : {
+      "success": true,
+      "message": "student read successfully",
+      "student": [
+        {
+          "studentId": "0cfc8500-8ebd-44ac-b2f8-f46e712e24ed",
+          "videoUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/students%2Fviddemo1.mp4?alt=media&token=c1a87355-2d6e-49f5-b87c-8d67eaf0784b",
+          "description": "gjygkjhjk",
+          "title": "title2"
+        },
+        {
+          "studentId": "78ffed10-3e19-43a5-88d7-a6d907f0c708",
+          "videoUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/students%2Fviddemo1.mp4?alt=media&token=9481caa7-7bc3-446d-bc41-152eeffe558e",
+          "description": "gfjghjgkjhgjgjgj",
+          "title": "title1"
+        }
+      ]
+    }
 */
 
 export const readAllStudent = async (req, res) => {
@@ -132,11 +160,21 @@ export const readAllStudent = async (req, res) => {
 
 //function to read single document of our Students details
 /* 
-    request url = http://localhost:8080/api/v1/user/read-student
+    request url = http://localhost:8080/api/v1/student/read-student
     method = POST
     {
       "studentId": "jjhjhjsagsa" //your doc id
     }
+      response: {
+        "success": true,
+        "message": "Album read successfully",
+        "student": {
+          "studentId": "0cfc8500-8ebd-44ac-b2f8-f46e712e24ed",
+          "videoUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/students%2Fviddemo1.mp4?alt=media&token=c1a87355-2d6e-49f5-b87c-8d67eaf0784b",
+          "description": "gjygkjhjk",
+          "title": "title2"
+        }
+      }
 */
 export const readSingleStudent = async (req, res) => {
   try {
@@ -161,7 +199,7 @@ export const readSingleStudent = async (req, res) => {
 
 //function to update single our Students details
 /* 
-    request url = http://localhost:8080/api/v1/user/update-student
+    request url = http://localhost:8080/api/v1/student/update-student
     method = POST
     FormData: 
     fields: {
@@ -171,6 +209,15 @@ export const readSingleStudent = async (req, res) => {
     }
     file: { //req.file
       "video": "file",
+    }
+    response: {
+      "success": true,
+      "message": "Student updated successfully",
+      "student": {
+        "title": "title2",
+        "description": "desc2_jhjhkhhkjhhkjjhjhkhkjkh",
+        "videoUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/students%2F827f2156-239e-4673-a41c-7c29d921c956%2Fviddemo4.mp4?alt=media&token=15653233-06a6-4872-a74b-798c84700b1d"
+      }
     }
 */
 export const updateStudent = async (req, res) => {
@@ -256,11 +303,21 @@ export const updateStudent = async (req, res) => {
 
 //function to delete single our Students details
 /* 
-    request url = http://localhost:8080/api/v1/user/delete-student
+    request url = http://localhost:8080/api/v1/student/delete-student
     method = POST
     req.body: 
     {
       "studentId": "studentId"
+    }
+    response: {
+      "success": true,
+      "message": "student deleted successfully",
+      "album": {
+        "_writeTime": {
+          "_seconds": 1721311989,
+          "_nanoseconds": 294702000
+        }
+      }
     }
 */
 export const deleteStudent = async (req, res) => {

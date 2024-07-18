@@ -20,11 +20,23 @@ const bucket = admin.storage().bucket()
 
 //function to create our gallery details
 /* 
-    request url = http://localhost:8080/api/v1/user/create-gallery
+    request url = http://localhost:8080/api/v1/gallery/create-gallery
     method = POST
     FormData: 
     file: { //req.file
       "file": "file",
+    }
+    response: {
+        "success": true,
+        "message": "Gallery created successfully",
+        "gallery": {
+            "name": "login3c.jpg",
+            "galleryId": "2def1d88-811b-40c5-b5e6-06c10759b692",
+            "url": [
+            "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/gallery%2F2def1d88-811b-40c5-b5e6-06c10759b692%2Flogin3c.jpg?alt=media&token=fee3d302-e7e0-45c5-8eea-eba0ba6d7dcb"
+            ],
+            "timestamp": "2024-07-18T20:31:27.482Z"
+        }
     }
 */
 export const createGallery = async (req, res) => {
@@ -97,8 +109,36 @@ export const createGallery = async (req, res) => {
 
 //function to read all our Gallery details
 /* 
-    request url = http://localhost:8080/api/v1/user/read-all-gallery
+    request url = http://localhost:8080/api/v1/gallery/read-all-gallery
     method = GET
+    response: {
+        "success": true,
+        "message": "gallery read successfully",
+        "gallery": [
+            {
+            "galleryId": "2def1d88-811b-40c5-b5e6-06c10759b692",
+            "name": "login3c.jpg",
+            "url": [
+                "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/gallery%2F2def1d88-811b-40c5-b5e6-06c10759b692%2Flogin3c.jpg?alt=media&token=fee3d302-e7e0-45c5-8eea-eba0ba6d7dcb"
+            ],
+            "timestamp": {
+                "_seconds": 1721334687,
+                "_nanoseconds": 482000000
+            }
+            },
+            {
+            "galleryId": "d582c96d-01f8-44d0-8aa6-44b4004ce31a",
+            "name": "viddemo4.mp4",
+            "url": [
+                "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/gallery%2Fd582c96d-01f8-44d0-8aa6-44b4004ce31a%2Fviddemo4.mp4?alt=media&token=bb5435e7-cfb2-4636-a70a-fd430c3c8a42"
+            ],
+            "timestamp": {
+                "_seconds": 1721334589,
+                "_nanoseconds": 560000000
+            }
+            }
+        ]
+        }
 */
 
 export const readAllGallery = async (req, res) => {
@@ -123,15 +163,31 @@ export const readAllGallery = async (req, res) => {
 
 //function to read single document of our Gallery details
 /* 
-    request url = http://localhost:8080/api/v1/user/read-gallery
+    request url = http://localhost:8080/api/v1/gallery/read-gallery
     method = POST
     {
       "gallerId": "jjhjhjsagsa" //your doc id
     }
+      response: {
+        "success": true,
+        "message": "student read successfully",
+        "gallery": {
+            "galleryId": "2def1d88-811b-40c5-b5e6-06c10759b692",
+            "name": "login3c.jpg",
+            "url": [
+            "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/gallery%2F2def1d88-811b-40c5-b5e6-06c10759b692%2Flogin3c.jpg?alt=media&token=fee3d302-e7e0-45c5-8eea-eba0ba6d7dcb"
+            ],
+            "timestamp": {
+            "_seconds": 1721334687,
+            "_nanoseconds": 482000000
+            }
+        }
+        }
 */
 export const readSingleGallery = async (req, res) => {
     try {
         const { galleryId } = req.body;
+        console.log(galleryId);
         var galleryData = await readSingleData(process.env.galleryCollection, galleryId);
         console.log('success');
 
@@ -152,7 +208,7 @@ export const readSingleGallery = async (req, res) => {
 
 //function to update single our Gallery details
 /* 
-    request url = http://localhost:8080/api/v1/user/update-gallery
+    request url = http://localhost:8080/api/v1/gallery/update-gallery
     method = POST
     FormData: 
     fields: {
@@ -161,12 +217,23 @@ export const readSingleGallery = async (req, res) => {
     file: { //req.file
       "file": "file",
     }
+    response: {
+        "success": true,
+        "message": "Student updated successfully",
+        "gallery": {
+            "url": [
+            "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/gallery%2F2def1d88-811b-40c5-b5e6-06c10759b692%2Fviddemo1.mp4?alt=media&token=65c52391-3230-4bd7-8f9f-8d90519841fa"
+            ],
+            "name": "viddemo1.mp4"
+        }
+    }
 */
 export const updateGallery = async (req, res) => {
     try {
         const { galleryId } = req.body;
         const file = req.file;
         var downloadURL;
+        const updates = {}
 
         // Create the updates object only with provided fields
 
@@ -203,7 +270,9 @@ export const updateGallery = async (req, res) => {
                         async () => {
                             try {
                                 downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                                if (downloadURL) updates.imgUrl = downloadURL;
+                                var urlArr = [];
+                                urlArr.push(downloadURL);
+                                if (downloadURL) updates.url = urlArr;
                                 if (file.originalname) updates.name = file.originalname;
                                 resolve();
                             } catch (error) {
@@ -239,11 +308,21 @@ export const updateGallery = async (req, res) => {
 
 //function to delete single our Gallery details
 /* 
-    request url = http://localhost:8080/api/v1/user/delete-gallery
+    request url = http://localhost:8080/api/v1/gallery/delete-gallery
     method = POST
     req.body: 
     {
       "galleryId": "galleryId"
+    }
+      response: {
+        "success": true,
+        "message": "student deleted successfully",
+        "gallery": {
+            "_writeTime": {
+            "_seconds": 1721335483,
+            "_nanoseconds": 272460000
+            }
+        }
     }
 */
 export const deleteGallery = async (req, res) => {

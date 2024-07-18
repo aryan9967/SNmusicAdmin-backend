@@ -39,17 +39,17 @@ export const createCollection = async (firstCollectionName, secondCollectionName
   }
 };
 
-export const createNestedData = async (firstCollectionName, secondCollectionName, id, data) => {
+export const createSubData = async (firstCollectionName, secondCollectionName, id1, id2, data) => {
   try {
     // Create a reference to the nested collection
-    const collectionRef = db.collection(firstCollectionName).doc(id).collection(secondCollectionName);
+    const collectionRef = db.collection(firstCollectionName).doc(id1);
 
     // If initialDoc is provided, add it to the nested collection
     if (data) {
-      await collectionRef.add(data);
+      await collectionRef.collection(secondCollectionName).doc(id2).set(data);
     }
 
-    return create;
+    return data;
   } catch (error) {
     console.log(error);
   }
@@ -72,7 +72,7 @@ export const readAllData = async (collectionName) => {
   }
 };
 
-export const readAllNestedData = async (firstCollectionName, secondCollectionName, id) => {
+export const readAllSubData = async (firstCollectionName, secondCollectionName, id) => {
   try {
     //Retrieve user data
     const querySnapshot = await db
@@ -92,7 +92,18 @@ export const readAllNestedData = async (firstCollectionName, secondCollectionNam
 
 export const readSingleData = async (collectionName, id) => {
   try {
+    console.log(id);
     const userRef = await db.collection(collectionName).doc(id).get();
+    return userRef.data();
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const readSingleSubData = async (firstCollectionName, secondCollectionName, id1, id2) => {
+  try {
+    //Retrieve user data
+    const userRef = await db.collection(firstCollectionName).doc(id1).collection(secondCollectionName).doc(id2).get();
     return userRef.data();
   } catch (error) {
     console.log(error);
@@ -119,6 +130,16 @@ export const readFieldData = async (collectionName, id, fieldName) => {
 export const matchData = async (collectionName, key, value) => {
   const querySnapshot = await db
     .collection(collectionName)
+    .where(key, '==', value)
+    .get();
+  return querySnapshot;
+}
+
+export const matchSubData = async (firstCollectionName, secondCollectionName, id, key, value) => {
+  const querySnapshot = await db
+    .collection(firstCollectionName)
+    .doc(id)
+    .collection(secondCollectionName)
     .where(key, '==', value)
     .get();
   return querySnapshot;
@@ -152,11 +173,35 @@ export const updateData = async (collectionName, id, data) => {
   }
 };
 
+export const updateSubData = async (firstCollectionName, secondCollectionName, id1, id2, data) => {
+  try {
+    const userRef = await db.collection(firstCollectionName).doc(id1).collection(secondCollectionName).doc(id2).update(data);
+    return userRef
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 export const deleteData = async (collectionName, id) => {
   try {
     const response = await db
       .collection(collectionName)
       .doc(id)
+      .delete();
+    console.log(response);
+    return response;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const deleteSubData = async (firstCollectionName, secondCollectionName, id1, id2) => {
+  try {
+    const response = await db
+      .collection(firstCollectionName)
+      .doc(id1)
+      .collection(secondCollectionName)
+      .doc(id2)
       .delete();
     console.log(response);
     return response;

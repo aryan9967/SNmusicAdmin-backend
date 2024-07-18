@@ -3,7 +3,7 @@ import multer from 'multer';
 import { isAdmin, requireSignIn } from '../middleware/authMiddleware.js';
 import { createEvent, deleteEvent, readAllEvent, readSingleEvent, updateEvent } from '../controllers/eventController.js';
 
-const upload = multer({storage: multer.memoryStorage()});
+const upload = multer({ storage: multer.memoryStorage() });
 
 //route object
 const router = express.Router();
@@ -11,18 +11,18 @@ const router = express.Router();
 //routing
 
 //Verify Phone Number || POST
-router.post('/create-student', upload.single('video'), createEvent);
+router.post('/create-event', upload.single('video'), createEvent);
 
 //Verify Phone Number || POST
-router.get('/read-all-student', readAllEvent);
+router.get('/read-all-event', readAllEvent);
 
 //Verify Phone Number || POST
-router.post('/read-student', readSingleEvent);
+router.post('/read-event', readSingleEvent);
 
 //Verify Phone Number || POST
-router.post('/update-student', upload.single('video'), updateEvent);
+router.post('/update-event', upload.single('video'), updateEvent);
 
 //Verify Phone Number || POST
-router.post('/delete-student', deleteEvent);
+router.post('/delete-event', deleteEvent);
 
 export default router;
