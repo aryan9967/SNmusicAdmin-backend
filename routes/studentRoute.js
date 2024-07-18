@@ -3,7 +3,7 @@ import multer from 'multer';
 import { isAdmin, requireSignIn } from '../middleware/authMiddleware.js';
 import { createStudents, deleteStudent, readAllStudent, readSingleStudent, updateStudent } from '../controllers/studentController.js';
 
-const upload = multer({storage: multer.memoryStorage()});
+const upload = multer({ storage: multer.memoryStorage() });
 
 //route object
 const router = express.Router();

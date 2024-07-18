@@ -6,11 +6,6 @@ import { createAlbumFolder, createAlbumItem, deleteAlbumFolder, deleteAlbumItem,
 
 const upload = multer(); //
 
-
-
-
-//In progress
-
 //route object
 const router = express.Router();
 
