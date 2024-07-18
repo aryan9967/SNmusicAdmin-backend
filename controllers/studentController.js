@@ -44,7 +44,10 @@ const bucket = admin.storage().bucket()
 export const createStudents = async (req, res) => {
   try {
     const { title, description } = req.body;
+    console.log(req)
     const file = req.file;
+    console.log(req.body)
+    console.log("file", file)
     const studentId = uuidv4();
 
     if (!title || !description || !file) {
