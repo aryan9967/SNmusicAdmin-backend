@@ -21,6 +21,8 @@ const bucket = admin.storage().bucket()
 
 
 //register admin
+
+//not applicable
 export const adminRegisterController = async (req, res) => {
   try {
     const { name, address, contact, email, instagram, facebook, twitter } = req.body;
@@ -98,6 +100,16 @@ export const adminRegisterController = async (req, res) => {
 };
 
 //Login User
+
+//function to login admin
+/* 
+    request url = http://localhost:8080/api/v1/auth/login-admin
+    method = POST
+    req.body: 
+    {
+      "adminId": "adminId"
+    }
+*/
 export const adminLoginController = async (req, res) => {
   try {
     const { adminId } = req.body;

@@ -1,7 +1,7 @@
 import express from 'express';
 import multer from 'multer';
 import { isAdmin, requireSignIn } from '../middleware/authMiddleware.js';
-import { createStudents, deleteStudent, readAllStudent, readSingleStudent, updateStudent } from '../controllers/studentController.js';
+import { createGallery, deleteGallery, readAllGallery, readSingleGallery, updateGallery } from '../controllers/galleryController.js';
 
 const upload = multer({storage: multer.memoryStorage()});
 
@@ -11,18 +11,18 @@ const router = express.Router();
 //routing
 
 //Verify Phone Number || POST
-router.post('/create-student', upload.single('video'), createStudents);
+router.post('/create-student', upload.single('file'), createGallery);
 
 //Verify Phone Number || POST
-router.get('/read-all-student', readAllStudent);
+router.get('/read-all-student', readAllGallery);
 
 //Verify Phone Number || POST
-router.post('/read-student', readSingleStudent);
+router.post('/read-student', readSingleGallery);
 
 //Verify Phone Number || POST
-router.post('/update-student', upload.single('video'), updateStudent);
+router.post('/update-student', upload.single('file'), updateGallery);
 
 //Verify Phone Number || POST
-router.post('/delete-student', deleteStudent);
+router.post('/delete-student', deleteGallery);
 
 export default router;

@@ -6,6 +6,7 @@ import authRoutes from './routes/authRoute.js';
 import albumRoutes from './routes/albumRoute.js';
 import studentRoutes from './routes/studentRoute.js';
 import eventRoutes from './routes/eventRoute.js';
+import galleryRoutes from './routes/galleryRoute.js';
 // import productRoutes from './routes/productRoutes.js';
 import cors from 'cors';
 import bodyParser from 'body-parser';
@@ -25,7 +26,7 @@ app.use(express.json());
 //routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/album', albumRoutes);
-app.use('/api/v1/gallery', authRoutes);
+app.use('/api/v1/gallery', galleryRoutes);
 app.use('/api/v1/event', eventRoutes);
 app.use('/api/v1/student', studentRoutes);
 

@@ -11,7 +11,7 @@ const router = express.Router();
 //routing
 
 //Verify Phone Number || POST
-router.post('/create-student', requireSignIn, isAdmin, upload.single('video'), createEvent);
+router.post('/create-student', upload.single('video'), createEvent);
 
 //Verify Phone Number || POST
 router.get('/read-all-student', readAllEvent);
@@ -20,9 +20,9 @@ router.get('/read-all-student', readAllEvent);
 router.post('/read-student', readSingleEvent);
 
 //Verify Phone Number || POST
-router.post('/update-student', requireSignIn, isAdmin, upload.single('video'), updateEvent);
+router.post('/update-student', upload.single('video'), updateEvent);
 
 //Verify Phone Number || POST
-router.post('/delete-student', requireSignIn, isAdmin, deleteEvent);
+router.post('/delete-student', deleteEvent);
 
 export default router;

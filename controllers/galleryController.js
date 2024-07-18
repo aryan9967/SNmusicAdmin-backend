@@ -18,24 +18,15 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 const bucket = admin.storage().bucket()
 
-//function to create our Students details
+//function to create our gallery details
 /* 
-    request url = http://localhost:8080/api/v1/user/create-student
+    request url = http://localhost:8080/api/v1/user/create-gallery
     method = POST
     FormData: 
-    fields: {
-      "title": "title1",
-      "description": "desc1"
-    }
     file: { //req.file
-      "video": "file",
+      "file": "file",
     }
 */
-
-
-
-
-//In Progress
 export const createGallery = async (req, res) => {
     try {
         const file = req.file;
@@ -76,16 +67,17 @@ export const createGallery = async (req, res) => {
 
                     const galleryJson = {
                         name: file.originalname,
-                        url: [...all, downloadURL],
+                        galleryId: galleryId,
+                        url: [downloadURL],
                         timestamp: new Date(),
                     };
 
-                    await createData(process.env.ourStudentCollection, studentId, studentJson);
+                    await createData(process.env.galleryCollection, galleryId, galleryJson);
 
                     res.status(201).send({
                         success: true,
-                        message: 'Student created successfully',
-                        student: studentJson,
+                        message: 'Gallery created successfully',
+                        gallery: galleryJson,
                     });
                 } catch (error) {
                     console.error('Error saving data:', error);
@@ -103,50 +95,50 @@ export const createGallery = async (req, res) => {
     }
 };
 
-//function to read all our Students details
+//function to read all our Gallery details
 /* 
-    request url = http://localhost:8080/api/v1/user/read-all-student
+    request url = http://localhost:8080/api/v1/user/read-all-gallery
     method = GET
 */
 
-export const readAllStudent = async (req, res) => {
+export const readAllGallery = async (req, res) => {
     try {
-        var student = await readAllData(process.env.ourStudentCollection);
+        var gallery = await readAllData(process.env.galleryCollection);
         console.log('success');
 
         return res.status(201).send({
             success: true,
-            message: 'students read successfully',
-            student: student
+            message: 'gallery read successfully',
+            gallery: gallery
         });
     } catch (error) {
-        console.error('Error in reading all student:', error);
+        console.error('Error in reading all gallery:', error);
         return res.status(500).send({
             success: false,
-            message: 'Error in reading all student',
+            message: 'Error in reading all gallery',
             error: error.message,
         });
     }
 };
 
-//function to read single document of our Students details
+//function to read single document of our Gallery details
 /* 
-    request url = http://localhost:8080/api/v1/user/read-student
+    request url = http://localhost:8080/api/v1/user/read-gallery
     method = POST
     {
-      "id": "jjhjhjsagsa" //your doc id
+      "gallerId": "jjhjhjsagsa" //your doc id
     }
 */
-export const readSingleStudent = async (req, res) => {
+export const readSingleGallery = async (req, res) => {
     try {
-        const { id } = req.body;
-        var studentData = await readSingleData(process.env.ourStudentCollection, id);
+        const { galleryId } = req.body;
+        var galleryData = await readSingleData(process.env.galleryCollection, galleryId);
         console.log('success');
 
         return res.status(201).send({
             success: true,
             message: 'student read successfully',
-            student: studentData
+            gallery: galleryData
         });
     } catch (error) {
         console.error('Error in reading student:', error);
@@ -158,45 +150,36 @@ export const readSingleStudent = async (req, res) => {
     }
 };
 
-//function to update single our Students details
+//function to update single our Gallery details
 /* 
-    request url = http://localhost:8080/api/v1/user/update-student
+    request url = http://localhost:8080/api/v1/user/update-gallery
     method = POST
     FormData: 
     fields: {
-      "id": "id"
-      "title": "title1",
-      "description": "desc1"
+      "galleryId": "galleryId"
     }
     file: { //req.file
-      "video": "file",
+      "file": "file",
     }
 */
-export const updateStudent = async (req, res) => {
+export const updateGallery = async (req, res) => {
     try {
-        const { id, title, description } = req.body;
+        const { galleryId } = req.body;
         const file = req.file;
         var downloadURL;
 
         // Create the updates object only with provided fields
-        const updates = {};
-        if (title) updates.title = title;
-        if (description) updates.description = description;
 
-        if (!id) {
+        if (!galleryId) {
             return res.status(400).send({ message: 'Error finding student' });
         }
 
-        if (!title && !description && !file) {
-            return res.status(400).send({ message: 'Title, description, and video are required' });
-        }
-
-        const validateData = await readSingleData(process.env.ourStudentCollection, id);
+        const validateData = await readSingleData(process.env.galleryCollection, galleryId);
 
         if (validateData) {
             console.log(file);
             if (file) {
-                const storageRef = ref(storage, `${process.env.storagePath}/students/${id}/${file.originalname}`);
+                const storageRef = ref(storage, `${process.env.storagePath}/gallery/${galleryId}/${file.originalname}`);
                 console.log(storageRef.fullPath);
                 const metadata = {
                     contentType: file.mimetype,
@@ -220,7 +203,8 @@ export const updateStudent = async (req, res) => {
                         async () => {
                             try {
                                 downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                                if (downloadURL) updates.videoUrl = downloadURL;
+                                if (downloadURL) updates.imgUrl = downloadURL;
+                                if (file.originalname) updates.name = file.originalname;
                                 resolve();
                             } catch (error) {
                                 console.error('Error getting download URL:', error);
@@ -234,13 +218,13 @@ export const updateStudent = async (req, res) => {
                 await uploadPromise;
             }
 
-            const student = await updateData(process.env.ourStudentCollection, id, updates)
+            const gallery = await updateData(process.env.galleryCollection, galleryId, updates)
             console.log('success');
 
             res.status(201).send({
                 success: true,
                 message: 'Student updated successfully',
-                student: updates,
+                gallery: updates,
             });
         }
     } catch (error) {
@@ -253,29 +237,29 @@ export const updateStudent = async (req, res) => {
     }
 };
 
-//function to delete single our Students details
+//function to delete single our Gallery details
 /* 
-    request url = http://localhost:8080/api/v1/user/delete-student
+    request url = http://localhost:8080/api/v1/user/delete-gallery
     method = POST
     req.body: 
     {
-      "id": "id"
+      "galleryId": "galleryId"
     }
 */
-export const deleteStudent = async (req, res) => {
+export const deleteGallery = async (req, res) => {
     try {
-        let { id } = req.body;
+        let { galleryId } = req.body;
 
-        if (id) {
-            const validateData = await readSingleData(process.env.ourStudentCollection, id)
+        if (galleryId) {
+            const validateData = await readSingleData(process.env.galleryCollection, galleryId)
             if (validateData) {
-                var albumData = await deleteData(process.env.ourStudentCollection, id);
+                var galleryData = await deleteData(process.env.galleryCollection, galleryId);
                 console.log('success');
 
                 return res.status(201).send({
                     success: true,
                     message: 'student deleted successfully',
-                    album: albumData
+                    gallery: galleryData
                 });
             }
         } else {
