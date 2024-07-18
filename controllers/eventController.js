@@ -18,9 +18,9 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 const bucket = admin.storage().bucket()
 
-//function to create our Students details
+//function to create our Events details
 /* 
-    request url = http://localhost:8080/api/v1/user/create-student
+    request url = http://localhost:8080/api/v1/user/create-event
     method = POST
     FormData: 
     fields: {
@@ -31,24 +31,22 @@ const bucket = admin.storage().bucket()
       "video": "file",
     }
 */
-export const createStudents = async (req, res) => {
+export const createEvent = async (req, res) => {
   try {
     const { title, description } = req.body;
     const file = req.file;
-    const studentId = uuidv4();
+    const eventId = uuidv4();
 
     if (!title || !description || !file) {
       return res.status(400).send({ message: 'Title, description, and video are required' });
     }
 
-    const validateData = await matchData(process.env.ourStudentCollection, 'title', title);
+    const validateData = await matchData(process.env.eventsCollection, 'title', title);
     if (!validateData.empty) {
-      return res.status(400).send({ message: 'Student already exists' });
+      return res.status(400).send({ message: 'Event already exists' });
     }
 
-    console.log(storage.app.name);
-    const storageRef = ref(storage, `${process.env.storagePath}/students/${studentId}/${file.originalname}`);
-    console.log(storageRef.parent);
+    const storageRef = ref(storage, `${process.env.storagePath}/events/${eventId}/${file.originalname}`);
     console.log(storageRef.bucket);
     console.log(storageRef.fullPath);
     const metadata = {
@@ -73,20 +71,20 @@ export const createStudents = async (req, res) => {
           const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
           console.log('Download URL:', downloadURL);
 
-          const studentJson = {
-            studentId: studentId,
+          const eventJson = {
+            eventId: eventId,
             title: title,
             description: description,
             videoUrl: downloadURL,
             timestamp: new Date(),
           };
 
-          await createData(process.env.ourStudentCollection, studentId, studentJson);
+          await createData(process.env.eventsCollection, eventId, eventJson);
 
           res.status(201).send({
             success: true,
             message: 'Student created successfully',
-            student: studentJson,
+            event: eventJson,
           });
         } catch (error) {
           console.error('Error saving data:', error);
@@ -104,68 +102,68 @@ export const createStudents = async (req, res) => {
   }
 };
 
-//function to read all our Students details
+//function to read all our Events details
 /* 
-    request url = http://localhost:8080/api/v1/user/read-all-student
+    request url = http://localhost:8080/api/v1/user/read-all-event
     method = GET
 */
 
-export const readAllStudent = async (req, res) => {
+export const readAllEvent = async (req, res) => {
   try {
-    var student = await readAllData(process.env.ourStudentCollection);
+    var event = await readAllData(process.env.eventsCollection);
     console.log('success');
 
     return res.status(201).send({
       success: true,
-      message: 'students read successfully',
-      student: student
+      message: 'events read successfully',
+      event: event
     });
   } catch (error) {
-    console.error('Error in reading all student:', error);
+    console.error('Error in reading all event:', error);
     return res.status(500).send({
       success: false,
-      message: 'Error in reading all student',
+      message: 'Error in reading all event',
       error: error.message,
     });
   }
 };
 
-//function to read single document of our Students details
+//function to read single document of our Events details
 /* 
-    request url = http://localhost:8080/api/v1/user/read-student
+    request url = http://localhost:8080/api/v1/user/read-event
     method = POST
     {
-      "studentId": "jjhjhjsagsa" //your doc id
+      "eventId": "jjhjhjsagsa" //your doc id
     }
 */
-export const readSingleStudent = async (req, res) => {
+export const readSingleEvent = async (req, res) => {
   try {
-    const { studentId } = req.body;
-    var studentData = await readSingleData(process.env.ourStudentCollection, studentId);
+    const { eventId } = req.body;
+    var eventData = await readSingleData(process.env.eventsCollection, eventId);
     console.log('success');
 
     return res.status(201).send({
       success: true,
-      message: 'student read successfully',
-      student: studentData
+      message: 'event read successfully',
+      event: eventData
     });
   } catch (error) {
-    console.error('Error in reading student:', error);
+    console.error('Error in reading event:', error);
     return res.status(500).send({
       success: false,
-      message: 'Error in reading student',
+      message: 'Error in reading event',
       error: error.message,
     });
   }
 };
 
-//function to update single our Students details
+//function to update single our Events details
 /* 
-    request url = http://localhost:8080/api/v1/user/update-student
+    request url = http://localhost:8080/api/v1/user/update-event
     method = POST
     FormData: 
     fields: {
-      "studentId": "studentId"
+      "eventId": "eventId"
       "title": "title1",
       "description": "desc1"
     }
@@ -173,9 +171,9 @@ export const readSingleStudent = async (req, res) => {
       "video": "file",
     }
 */
-export const updateStudent = async (req, res) => {
+export const updateEvent = async (req, res) => {
   try {
-    const { studentId, title, description } = req.body;
+    const { eventId, title, description } = req.body;
     const file = req.file;
     var downloadURL;
 
@@ -184,7 +182,7 @@ export const updateStudent = async (req, res) => {
     if (title) updates.title = title;
     if (description) updates.description = description;
 
-    if (!studentId) {
+    if (!eventId) {
       return res.status(400).send({ message: 'Error finding student' });
     }
 
@@ -192,12 +190,12 @@ export const updateStudent = async (req, res) => {
       return res.status(400).send({ message: 'Title, description, and video are required' });
     }
 
-    const validateData = await readSingleData(process.env.ourStudentCollection, studentId);
+    const validateData = await readSingleData(process.env.eventsCollection, eventId);
 
     if (validateData) {
       console.log(file);
       if (file) {
-        const storageRef = ref(storage, `${process.env.storagePath}/students/${studentId}/${file.originalname}`);
+        const storageRef = ref(storage, `${process.env.storagePath}/events/${eventId}/${file.originalname}`);
         console.log(storageRef.fullPath);
         const metadata = {
           contentType: file.mimetype,
@@ -235,7 +233,7 @@ export const updateStudent = async (req, res) => {
         await uploadPromise;
       }
 
-      const student = await updateData(process.env.ourStudentCollection, studentId, updates)
+      const student = await updateData(process.env.eventsCollection, eventId, updates)
       console.log('success');
 
       res.status(201).send({
@@ -254,29 +252,29 @@ export const updateStudent = async (req, res) => {
   }
 };
 
-//function to delete single our Students details
+//function to delete single our Events details
 /* 
-    request url = http://localhost:8080/api/v1/user/delete-student
+    request url = http://localhost:8080/api/v1/user/delete-event
     method = POST
     req.body: 
     {
-      "studentId": "studentId"
+      "eventId": "eventId"
     }
 */
-export const deleteStudent = async (req, res) => {
+export const deleteEvent = async (req, res) => {
   try {
-    let { studentId } = req.body;
+    let { eventId } = req.body;
 
-    if (studentId) {
-      const validateData = await readSingleData(process.env.ourStudentCollection, studentId)
+    if (id) {
+      const validateData = await readSingleData(process.env.eventsCollection, eventId)
       if (validateData) {
-        var studentData = await deleteData(process.env.ourStudentCollection, studentId);
+        var eventData = await deleteData(process.env.eventsCollection, eventId);
         console.log('success');
 
         return res.status(201).send({
           success: true,
           message: 'student deleted successfully',
-          student: studentData
+          event: eventData
         });
       }
     } else {

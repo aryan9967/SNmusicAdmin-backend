@@ -1,11 +1,7 @@
 import express from 'express';
 import {
-  testController,
-  verifyPhoneNumber,
-  userRegisterController,
-  userLoginController,
-  sellerRegisterController,
-  sellerLoginController,
+  adminRegisterController,
+  adminLoginController,
 } from '../controllers/authController.js';
 import { isAdmin, requireSignIn } from '../middleware/authMiddleware.js';
 // import { create } from '../DB/FCRUD.js';
@@ -15,23 +11,11 @@ const router = express.Router();
 
 //routing
 
-//Verify Phone Number || POST
-router.post('/verify', verifyPhoneNumber);
-
 //Register User || POST
-router.post('/register-user', userRegisterController);
-
-//Register Seller || POST
-router.post('/register-seller', sellerRegisterController);
+router.post('/register-admin', adminRegisterController);
 
 //Login User || POST
-router.post('/login-user', userLoginController);
-
-//Login Seller || POST
-router.post('/login-seller', sellerLoginController);
-
-//test route
-router.get('/test', requireSignIn, isAdmin, testController);
+router.post('/login-admin', adminLoginController);
 
 //protected user routing auth
 router.get('/user-auth', requireSignIn, (req, res) => {

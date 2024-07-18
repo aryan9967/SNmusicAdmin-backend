@@ -18,6 +18,13 @@ req.body =
 }
     * req.headers.authorization = JWT token
 */
+
+
+
+
+
+
+//In progress
 async function upload_banner(req, res) {
     if(!req.body.bannerid){
         return res.status(400).send("banner id must be provided")

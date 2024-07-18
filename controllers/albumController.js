@@ -29,6 +29,13 @@ const bucket = admin.storage().bucket();
     *req.headers.authorization = JWT token
 */
 
+
+
+
+
+
+
+//In progress
 export const createAlbumFolder = async (req, res) => {
   try {
     const { folder_name } = req.body;

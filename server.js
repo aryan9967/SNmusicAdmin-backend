@@ -5,14 +5,10 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/authRoute.js';
 import albumRoutes from './routes/albumRoute.js';
 import studentRoutes from './routes/studentRoute.js';
-import categoryRoutes from './routes/categoryRoutes.js';
+import eventRoutes from './routes/eventRoute.js';
 // import productRoutes from './routes/productRoutes.js';
 import cors from 'cors';
-import product_routes from "./routes/product_routes_aryan.js"
-import banner_route from "./routes/banner_route.js"
-import user_route from "./routes/userRoute.js"
 import bodyParser from 'body-parser';
-import seller_route from './routes/sellerRoute.js' 
 import utilroute from "./routes/utilities.js"
 
 //configure env
@@ -23,14 +19,14 @@ const app = express();
 
 //middlewares
 app.use(cors());
-app.use( bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.json());
 
 //routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/album', albumRoutes);
 app.use('/api/v1/gallery', authRoutes);
-app.use('/api/v1/album', albumRoutes);
+app.use('/api/v1/event', eventRoutes);
 app.use('/api/v1/student', studentRoutes);
 
 //rest api
