@@ -4,7 +4,14 @@ import { isAdmin, requireSignIn } from '../middleware/authMiddleware.js';
 import { createAlbumFolder, createAlbumItem, deleteAlbumFolder, deleteAlbumItem, readAllAlbumFolder, readAllAlbumItems, readSingleAlbumFolder, readSingleAlbumItem, updateAlbumFolder, updateAlbumItem } from '../controllers/albumController.js';
 // import { create } from '../DB/FCRUD.js';
 
-const upload = multer(); //
+// Configure multer for file uploads
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 50 * 1024 * 1024 }, // 50MB file size limit
+}).fields([
+    { name: 'media', maxCount: 1 },
+    { name: 'image', maxCount: 1 },
+]);
 
 //route object
 const router = express.Router();
@@ -14,7 +21,7 @@ const router = express.Router();
 //Verify Phone Number || POST
 router.post('/create-album-folder', createAlbumFolder);
 
-router.post('/create-album-item', upload.single('file'), createAlbumItem);
+router.post('/create-album-item', upload, createAlbumItem);
 
 //Register User || POST
 router.get('/read-all-album-folder', readAllAlbumFolder);
@@ -32,7 +39,7 @@ router.post('/read-single-album-item', readSingleAlbumItem);
 router.post('/update-album-folder', updateAlbumFolder);
 
 //Verify Phone Number || POST
-router.post('/update-album-item', upload.single('file'), updateAlbumItem);
+router.post('/update-album-item', upload, updateAlbumItem);
 
 //Login Seller || POST
 router.post('/delete-album-folder', deleteAlbumFolder);
