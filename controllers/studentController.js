@@ -10,7 +10,7 @@ import { uploadVideo } from "../DB/storage.js";
 import { createData, deleteData, matchData, readAllData, readSingleData, updateData } from "../DB/crumd.js";
 import { storage } from "../DB/firebase.js";
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { extractFrameFromVideo } from "../helper/mediaHelper.js";
+import { extractFrameFromVideo, uploadFile } from "../helper/mediaHelper.js";
 
 dotenv.config()
 
@@ -28,7 +28,7 @@ const bucket = admin.storage().bucket()
       "title": "title1",
       "description": "desc1"
     }
-    file: { //req.file
+    files: { //req.file
       "video": "video file",
       "image": "image file for thumbnail"
     }
@@ -52,7 +52,7 @@ export const createStudents = async (req, res) => {
     const studentId = uuidv4();
 
     if (!title || !description || !files || !files.video) {
-      return res.status(400).send({ message: 'Title, description, image, and video are required' });
+      return res.status(400).send({ message: 'Title, description video are required' });
     }
 
     const validateData = await matchData(process.env.ourStudentCollection, 'title', title);
@@ -60,46 +60,16 @@ export const createStudents = async (req, res) => {
       return res.status(400).send({ message: 'Student already exists' });
     }
 
-    const uploadFile = (file, type) => {
-      return new Promise((resolve, reject) => {
-        const storageRef = ref(storage, `${process.env.storagePath}/students/${studentId}/${type}/${file.originalname}`);
-        const metadata = { contentType: file.mimetype };
-        const uploadTask = uploadBytesResumable(storageRef, file.buffer, metadata);
-
-        uploadTask.on(
-          'state_changed',
-          (snapshot) => {
-            console.log('Upload state:', snapshot.state);
-            console.log('Bytes transferred:', snapshot.bytesTransferred);
-            console.log('Total bytes:', snapshot.totalBytes);
-          },
-          (error) => {
-            console.error('Upload error:', error);
-            reject({ message: 'Upload error', error: error.message });
-          },
-          async () => {
-            try {
-              const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-              resolve(downloadURL);
-            } catch (error) {
-              console.error('Error getting download URL:', error);
-              reject({ message: 'Error getting download URL', error: error.message });
-            }
-          }
-        );
-      });
-    };
-
     let imageUrl = null;
     let videoUrl = null;
 
     if (files.video && files.video.length > 0) {
       const videoFile = files.video[0];
-      videoUrl = await uploadFile(videoFile, 'videos', videoFile.name);
+      videoUrl = await uploadFile(videoFile, 'videos', `student/${studentId}/video/${videoFile.originalname}`);
 
       if (files.image && files.image.length > 0) {
         const imageFile = files.image[0];
-        imageUrl = await uploadFile(imageFile, 'images', imageFile.name);
+        imageUrl = await uploadFile(imageFile, 'images', `student/${studentId}/image/${imageFile.originalname}`);
       } else {
         const frameBuffer = await extractFrameFromVideo(videoFile.buffer);
         const frameFile = {
@@ -107,7 +77,7 @@ export const createStudents = async (req, res) => {
           mimetype: 'image/jpeg',
           buffer: frameBuffer,
         };
-        imageUrl = await uploadFile(frameFile, 'images');
+        imageUrl = await uploadFile(frameFile, 'images', `student/${studentId}/image/${frameFile.originalname}`);
       }
     } else {
       throw new Error('Video file is required.');
@@ -151,14 +121,14 @@ export const createStudents = async (req, res) => {
           "studentId": "0cfc8500-8ebd-44ac-b2f8-f46e712e24ed",
           "videoUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/students%2Fviddemo1.mp4?alt=media&token=c1a87355-2d6e-49f5-b87c-8d67eaf0784b",
           "description": "gjygkjhjk",
-          "title": "title2"
+          "title": "title2",
           "imageUrl": "hgjhghj.com"
         },
         {
           "studentId": "78ffed10-3e19-43a5-88d7-a6d907f0c708",
           "videoUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/students%2Fviddemo1.mp4?alt=media&token=9481caa7-7bc3-446d-bc41-152eeffe558e",
           "description": "gfjghjgkjhgjgjgj",
-          "title": "title1"
+          "title": "title1",
           "imageUrl": "hgjhghj.com"
         }
       ]
@@ -199,7 +169,7 @@ export const readAllStudent = async (req, res) => {
           "studentId": "0cfc8500-8ebd-44ac-b2f8-f46e712e24ed",
           "videoUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/students%2Fviddemo1.mp4?alt=media&token=c1a87355-2d6e-49f5-b87c-8d67eaf0784b",
           "description": "gjygkjhjk",
-          "title": "title2"
+          "title": "title2",
           "imageUrl": "hgjhghj.com"
         }
       }
@@ -275,47 +245,17 @@ export const updateStudent = async (req, res) => {
       return res.status(404).send({ message: 'Student not found' });
     }
 
-    const uploadFile = (file, type) => {
-      return new Promise((resolve, reject) => {
-        const storageRef = ref(storage, `${process.env.storagePath}/students/${studentId}/${type}/${file.originalname}`);
-        const metadata = { contentType: file.mimetype };
-        const uploadTask = uploadBytesResumable(storageRef, file.buffer, metadata);
-
-        uploadTask.on(
-          'state_changed',
-          (snapshot) => {
-            console.log('Upload state:', snapshot.state);
-            console.log('Bytes transferred:', snapshot.bytesTransferred);
-            console.log('Total bytes:', snapshot.totalBytes);
-          },
-          (error) => {
-            console.error('Upload error:', error);
-            reject({ message: 'Upload error', error: error.message });
-          },
-          async () => {
-            try {
-              const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-              resolve(downloadURL);
-            } catch (error) {
-              console.error('Error getting download URL:', error);
-              reject({ message: 'Error getting download URL', error: error.message });
-            }
-          }
-        );
-      });
-    };
-
     let imageUrl = null;
     let videoUrl = null;
 
     if (files.video && files.video.length > 0) {
       const videoFile = files.video[0];
-      videoUrl = await uploadFile(videoFile, 'videos');
+      videoUrl = await uploadFile(videoFile, 'videos', `student/${studentId}/video/${videoFile.originalname}`);
       updates.videoUrl = videoUrl;
 
       if (files.image && files.image.length > 0) {
         const imageFile = files.image[0];
-        imageUrl = await uploadFile(imageFile, 'images');
+        imageUrl = await uploadFile(imageFile, 'images', `student/${studentId}/image/${imageFile.originalname}`);
         updates.imageUrl = imageUrl;
       }
     }

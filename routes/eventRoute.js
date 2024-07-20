@@ -3,7 +3,14 @@ import multer from 'multer';
 import { isAdmin, requireSignIn } from '../middleware/authMiddleware.js';
 import { createEvent, deleteEvent, readAllEvent, readSingleEvent, updateEvent } from '../controllers/eventController.js';
 
-const upload = multer({ storage: multer.memoryStorage() });
+// Configure multer for file uploads
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 50 * 1024 * 1024 }, // 50MB file size limit
+}).fields([
+    { name: 'image', maxCount: 1 },
+    { name: 'video', maxCount: 1 },
+]);
 
 //route object
 const router = express.Router();
