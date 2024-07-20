@@ -1,0 +1,391 @@
+import { faL } from "@fortawesome/free-solid-svg-icons";
+import { db, admin } from "../DB/firestore.js";
+import multer from 'multer';
+import dotenv from "dotenv"
+import express from 'express';
+import { FieldValue } from "firebase-admin/firestore"
+import slugify from "slugify";
+import { v4 as uuidv4 } from 'uuid';
+import { uploadVideo } from "../DB/storage.js";
+import { createData, deleteData, matchData, readAllData, readSingleData, updateData } from "../DB/crumd.js";
+import { storage } from "../DB/firebase.js";
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+
+dotenv.config()
+
+// Multer configuration for file uploads
+const upload = multer({ storage: multer.memoryStorage() });
+
+const bucket = admin.storage().bucket()
+
+//function to create Wind Instruments details
+/* 
+    request url = http://localhost:8080/api/v1/instrument/create-intrument
+    method = POST
+    FormData: 
+    fields: {
+      "title": "North Indian Bansuri" 
+    }
+    file: { //req.file
+      "image": "image file"
+      "video": "video file",
+    }
+    response: {
+        "success": true,
+        "message": "Instrument created successfully",
+        "instrument": {
+            "instrumentId": "5886b16b-a223-4e30-a58b-21e6e10e6f5c",
+            "title": "North Indian Bansuri",
+            "imageUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/instruments%2F5886b16b-a223-4e30-a58b-21e6e10e6f5c%2Fimages%2Finstrument1.jpg?alt=media&token=ca83de52-70f0-4258-a50b-434dd98f9835",
+            "videoUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/instruments%2F5886b16b-a223-4e30-a58b-21e6e10e6f5c%2Fvideos%2FvidInstrument2.mp4?alt=media&token=7a6af880-03f9-4713-808b-796778ab25d9",
+            "timestamp": "2024-07-19T07:56:31.942Z"
+        }
+    }
+}
+*/
+
+// Create Instrument with Image and Video
+export const createInstrument = async (req, res) => {
+    try {
+        const { title } = req.body;
+        console.log(title);
+        const files = req.files; // Assuming files are passed as an object with keys 'image' and 'video'
+        const instrumentId = uuidv4();
+        console.log(files);
+
+        if (!title || !files || !files.image || !files.video) {
+            return res.status(400).send({ message: 'Title, description, image, and video are required' });
+        }
+
+        const validateData = await matchData(process.env.instrumentCollection, 'title', title);
+        if (!validateData.empty) {
+            return res.status(400).send({ message: 'Instrument already exists' });
+        }
+
+        // const fileExtension = file.originalname.split('.').pop().toLowerCase();
+        // const isImage = ['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension);
+        // const isVideo = ['mp4', 'avi', 'mkv', 'mov'].includes(fileExtension);
+
+        const uploadFile = (file, type) => {
+            return new Promise((resolve, reject) => {
+                const storageRef = ref(storage, `${process.env.storagePath}/instruments/${instrumentId}/${type}/${file.originalname}`);
+                const metadata = { contentType: file.mimetype };
+                const uploadTask = uploadBytesResumable(storageRef, file.buffer, metadata);
+
+                uploadTask.on(
+                    'state_changed',
+                    (snapshot) => {
+                        console.log('Upload state:', snapshot.state);
+                        console.log('Bytes transferred:', snapshot.bytesTransferred);
+                        console.log('Total bytes:', snapshot.totalBytes);
+                    },
+                    (error) => {
+                        console.error('Upload error:', error);
+                        reject({ message: 'Upload error', error: error.message });
+                    },
+                    async () => {
+                        try {
+                            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                            resolve(downloadURL);
+                        } catch (error) {
+                            console.error('Error getting download URL:', error);
+                            reject({ message: 'Error getting download URL', error: error.message });
+                        }
+                    }
+                );
+            });
+        };
+
+        // Upload image and video
+        const imageUploadPromise = uploadFile(files.image[0], 'images');
+        const videoUploadPromise = uploadFile(files.video[0], 'videos');
+
+        const [imageUrl, videoUrl] = await Promise.all([imageUploadPromise, videoUploadPromise]);
+
+        const instrumentJson = {
+            instrumentId: instrumentId,
+            title: title,
+            imageUrl: imageUrl,
+            videoUrl: videoUrl,
+            timestamp: new Date(),
+        };
+
+        await createData(process.env.instrumentCollection, instrumentId, instrumentJson);
+
+        res.status(201).send({
+            success: true,
+            message: 'Instrument created successfully',
+            instrument: instrumentJson,
+        });
+    } catch (error) {
+        console.error('Error in instrument creation:', error);
+        res.status(500).send({
+            success: false,
+            message: 'Error in instrument creation',
+            error: error.message,
+        });
+    }
+};
+
+//function to read all our Instrument details
+/* 
+    request url = http://localhost:8080/api/v1/instrument/read-all-instrument
+    method = GET
+    response : {
+        "success": true,
+        "message": "instruments read successfully",
+        "instrument": [
+            {
+            "videoUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/instruments%2F5886b16b-a223-4e30-a58b-21e6e10e6f5c%2Fvideos%2FvidInstrument2.mp4?alt=media&token=7a6af880-03f9-4713-808b-796778ab25d9",
+            "instrumentId": "5886b16b-a223-4e30-a58b-21e6e10e6f5c",
+            "imageUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/instruments%2F5886b16b-a223-4e30-a58b-21e6e10e6f5c%2Fimages%2Finstrument1.jpg?alt=media&token=ca83de52-70f0-4258-a50b-434dd98f9835",
+            "title": "North Indian Bansuri",
+            "timestamp": {
+                "_seconds": 1721375791,
+                "_nanoseconds": 942000000
+            }
+            },
+            {
+            "videoUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/instruments%2F73f62850-b6a3-4f0d-862c-3916dc4c8a6f%2Fvideos%2FvidInstrument3.mp4?alt=media&token=b016467d-fb40-46bf-aeb3-9f4a7fe1acab",
+            "instrumentId": "73f62850-b6a3-4f0d-862c-3916dc4c8a6f",
+            "imageUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/instruments%2F73f62850-b6a3-4f0d-862c-3916dc4c8a6f%2Fimages%2Finstrument3.png?alt=media&token=f4b8418d-2423-4eb4-8400-a29f049e957a",
+            "title": "Western flute (Key or metal flute)",
+            "timestamp": {
+                "_seconds": 1721376400,
+                "_nanoseconds": 97000000
+            }
+            }
+        ]
+    }
+*/
+
+export const readAllInstrument = async (req, res) => {
+    try {
+        var instrument = await readAllData(process.env.instrumentCollection);
+        console.log('success');
+
+        return res.status(201).send({
+            success: true,
+            message: 'instruments read successfully',
+            instrument: instrument
+        });
+    } catch (error) {
+        console.error('Error in reading all instruments:', error);
+        return res.status(500).send({
+            success: false,
+            message: 'Error in reading all instruments',
+            error: error.message,
+        });
+    }
+};
+
+//function to read single document of our Instruments details
+/* 
+    request url = http://localhost:8080/api/v1/instrument/read-instrument
+    method = POST
+    {
+      "instrumentId": "jjhjhjsagsa" //your doc id
+    }
+    response: {
+        "success": true,
+        "message": "instrument read successfully",
+        "instrument": {
+            "videoUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/instruments%2F5886b16b-a223-4e30-a58b-21e6e10e6f5c%2Fvideos%2FvidInstrument2.mp4?alt=media&token=7a6af880-03f9-4713-808b-796778ab25d9",
+            "instrumentId": "5886b16b-a223-4e30-a58b-21e6e10e6f5c",
+            "imageUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/instruments%2F5886b16b-a223-4e30-a58b-21e6e10e6f5c%2Fimages%2Finstrument1.jpg?alt=media&token=ca83de52-70f0-4258-a50b-434dd98f9835",
+            "title": "North Indian Bansuri",
+            "timestamp": {
+            "_seconds": 1721375791,
+            "_nanoseconds": 942000000
+            }
+        }
+    }
+*/
+export const readSingleInstrument = async (req, res) => {
+    try {
+        const { instrumentId } = req.body;
+        if (!instrumentId) {
+            return res.status(400).send({ message: 'Could not find such instrument' });
+        }
+        var instrumentData = await readSingleData(process.env.instrumentCollection, instrumentId);
+        console.log('success');
+
+        return res.status(201).send({
+            success: true,
+            message: 'instrument read successfully',
+            instrument: instrumentData
+        });
+    } catch (error) {
+        console.error('Error in reading instrument:', error);
+        return res.status(500).send({
+            success: false,
+            message: 'Error in reading instrument',
+            error: error.message,
+        });
+    }
+};
+
+//function to update single our Instrument details
+/* 
+    request url = http://localhost:8080/api/v1/instrument/update-instrument
+    method = POST
+    FormData: 
+    fields: {
+      "instrumentId": "studentId"
+      "title": "title1"
+    }
+    files: { //req.file
+      "video": "video file",
+      "imag1e": "image file"
+    }
+    response: {
+        "success": true,
+        "message": "Instrument updated successfully",
+        "instrument": {
+            "instrumentId": "5886b16b-a223-4e30-a58b-21e6e10e6f5c",
+            "timestamp": {
+            "_seconds": 1721375791,
+            "_nanoseconds": 942000000
+            },
+            "videoUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/instruments%2F5886b16b-a223-4e30-a58b-21e6e10e6f5c%2Fvideos%2FvidInstrument2.mp4?alt=media&token=15ab045d-f3d6-4ca1-adc2-d0cf5933568e",
+            "imageUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/instruments%2F5886b16b-a223-4e30-a58b-21e6e10e6f5c%2Fimages%2Finstrument1.jpg?alt=media&token=971c5d03-a071-409a-80d1-581857e3c57e",
+            "title": "North Indian Bansuri"
+        }
+    }
+*/export const updateInstrument = async (req, res) => {
+    try {
+        const { instrumentId, title } = req.body;
+        const files = req.files; // Assuming files are passed as an object with keys 'image' and 'video'
+        const updates = {};
+        let imageUrl, videoUrl;
+
+        if (!instrumentId) {
+            return res.status(400).send({ message: 'Could not find such instrument' });
+        }
+
+        if (!title && !files) {
+            return res.status(400).send({ message: 'Title, image, or video is required' });
+        }
+
+        const validateData = await readSingleData(process.env.instrumentCollection, instrumentId);
+
+        if (!validateData) {
+            return res.status(404).send({ message: 'Instrument not found' });
+        }
+
+        if (title) updates.title = title;
+
+        const uploadFile = (file, type) => {
+            return new Promise((resolve, reject) => {
+                const storageRef = ref(storage, `${process.env.storagePath}/instruments/${instrumentId}/${type}/${file.originalname}`);
+                const metadata = { contentType: file.mimetype };
+                const uploadTask = uploadBytesResumable(storageRef, file.buffer, metadata);
+
+                uploadTask.on(
+                    'state_changed',
+                    (snapshot) => {
+                        console.log('Upload state:', snapshot.state);
+                        console.log('Bytes transferred:', snapshot.bytesTransferred);
+                        console.log('Total bytes:', snapshot.totalBytes);
+                    },
+                    (error) => {
+                        console.error('Upload error:', error);
+                        reject({ message: 'Upload error', error: error.message });
+                    },
+                    async () => {
+                        try {
+                            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                            resolve(downloadURL);
+                        } catch (error) {
+                            console.error('Error getting download URL:', error);
+                            reject({ message: 'Error getting download URL', error: error.message });
+                        }
+                    }
+                );
+            });
+        };
+
+        const uploadPromises = [];
+        if (files?.image) {
+            uploadPromises.push(uploadFile(files.image[0], 'images').then((url) => {
+                updates.imageUrl = url;
+                imageUrl = url;
+            }));
+        }
+        if (files?.video) {
+            uploadPromises.push(uploadFile(files.video[0], 'videos').then((url) => {
+                updates.videoUrl = url;
+                videoUrl = url;
+            }));
+        }
+
+        await Promise.all(uploadPromises);
+
+        await updateData(process.env.instrumentCollection, instrumentId, updates);
+
+        res.status(200).send({
+            success: true,
+            message: 'Instrument updated successfully',
+            instrument: {
+                ...validateData,
+                ...updates,
+            },
+        });
+    } catch (error) {
+        console.error('Error in updating instrument:', error);
+        res.status(500).send({
+            success: false,
+            message: 'Error in updating instrument',
+            error: error.message,
+        });
+    }
+};
+
+//function to delete single our Instrument details
+/* 
+    request url = http://localhost:8080/api/v1/instrument/delete-instrument
+    method = POST
+    req.body: 
+    {
+      "instrumentId": "instrumentId"
+    }
+    response: {
+      "success": true,
+      "message": "instrument deleted successfully",
+      "album": {
+        "_writeTime": {
+          "_seconds": 1721311989,
+          "_nanoseconds": 294702000
+        }
+      }
+    }
+*/
+export const deleteInstrument = async (req, res) => {
+    try {
+        let { instrumentId } = req.body;
+
+        if (instrumentId) {
+            const validateData = await readSingleData(process.env.instrumentCollection, instrumentId)
+            if (validateData) {
+                var instrumentData = await deleteData(process.env.instrumentCollection, instrumentId);
+                console.log('success');
+
+                return res.status(201).send({
+                    success: true,
+                    message: 'student deleted successfully',
+                    instrument: instrumentData
+                });
+            }
+        } else {
+            return res.send({ message: "Error while finding instrument" })
+        }
+
+    } catch (error) {
+        console.error('Error in instrument deletion:', error);
+        return res.status(500).send({
+            success: false,
+            message: 'Error in instrument deletion',
+            error: error.message,
+        });
+    }
+};
