@@ -7,10 +7,10 @@ import albumRoutes from './routes/albumRoute.js';
 import studentRoutes from './routes/studentRoute.js';
 import eventRoutes from './routes/eventRoute.js';
 import galleryRoutes from './routes/galleryRoute.js';
+import instrumentRoutes from './routes/windInstrumentRoute.js';
 // import productRoutes from './routes/productRoutes.js';
 import cors from 'cors';
 import bodyParser from 'body-parser';
-import utilroute from "./routes/utilities.js"
 
 //configure env
 dotenv.config();
@@ -28,6 +28,7 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/album', albumRoutes);
 app.use('/api/v1/gallery', galleryRoutes);
 app.use('/api/v1/event', eventRoutes);
+app.use('/api/v1/instrument', instrumentRoutes);
 app.use('/api/v1/student', studentRoutes);
 
 //rest api

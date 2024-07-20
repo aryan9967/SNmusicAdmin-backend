@@ -10,6 +10,7 @@ import { uploadVideo } from "../DB/storage.js";
 import { createData, deleteData, matchData, readAllData, readSingleData, updateData } from "../DB/crumd.js";
 import { storage } from "../DB/firebase.js";
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { extractFrameFromVideo } from "../helper/mediaHelper.js";
 
 dotenv.config()
 
@@ -28,7 +29,8 @@ const bucket = admin.storage().bucket()
       "description": "desc1"
     }
     file: { //req.file
-      "video": "file",
+      "video": "video file",
+      "image": "image file"
     }
     response: {
       "success": true,
@@ -38,20 +40,23 @@ const bucket = admin.storage().bucket()
       "title": "title3",
       "description": "desc3",
       "videoUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/students%2F81d4a19c-683d-4387-9933-e337e1ac50dc%2Fviddemo2.mp4?alt=media&token=acd72563-d7ea-4552-a00e-f60144857426"
-    }
+      "imageUrl": "hgjhghj.com" (optional)
+      }
 }
 */
 export const createStudents = async (req, res) => {
   try {
     const { title, description } = req.body;
     console.log(req)
-    const file = req.file;
-    console.log(req.body)
-    console.log("file", file)
+    const files = req.files;
+    console.log("file1", req.file)
+    console.log("file2", req.files)
+    console.log("file3", req.files[0])
+    console.log("file4", files)
     const studentId = uuidv4();
 
-    if (!title || !description || !file) {
-      return res.status(400).send({ message: 'Title, description, and video are required' });
+    if (!title || !description || !files || !files.video) {
+      return res.status(400).send({ message: 'Title, description, image, and video are required' });
     }
 
     const validateData = await matchData(process.env.ourStudentCollection, 'title', title);
@@ -59,54 +64,75 @@ export const createStudents = async (req, res) => {
       return res.status(400).send({ message: 'Student already exists' });
     }
 
-    console.log(storage.app.name);
-    const storageRef = ref(storage, `${process.env.storagePath}/students/${studentId}/${file.originalname}`);
-    console.log(storageRef.parent);
-    console.log(storageRef.bucket);
-    console.log(storageRef.fullPath);
-    const metadata = {
-      contentType: file.mimetype,
+    const uploadFile = (file, type) => {
+      return new Promise((resolve, reject) => {
+        const storageRef = ref(storage, `${process.env.storagePath}/students/${studentId}/${type}/${file.originalname}`);
+        const metadata = { contentType: file.mimetype };
+        const uploadTask = uploadBytesResumable(storageRef, file.buffer, metadata);
+
+        uploadTask.on(
+          'state_changed',
+          (snapshot) => {
+            console.log('Upload state:', snapshot.state);
+            console.log('Bytes transferred:', snapshot.bytesTransferred);
+            console.log('Total bytes:', snapshot.totalBytes);
+          },
+          (error) => {
+            console.error('Upload error:', error);
+            reject({ message: 'Upload error', error: error.message });
+          },
+          async () => {
+            try {
+              const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+              resolve(downloadURL);
+            } catch (error) {
+              console.error('Error getting download URL:', error);
+              reject({ message: 'Error getting download URL', error: error.message });
+            }
+          }
+        );
+      });
     };
 
-    const uploadTask = uploadBytesResumable(storageRef, file.buffer, metadata);
+    let imageUrl = null;
+    let videoUrl = null;
 
-    uploadTask.on(
-      'state_changed',
-      (snapshot) => {
-        console.log('Upload state:', snapshot.state);
-        console.log('Bytes transferred:', snapshot.bytesTransferred);
-        console.log('Total bytes:', snapshot.totalBytes);
-      },
-      (error) => {
-        console.error('Upload error:', error);
-        res.status(500).send({ message: 'Upload error', error: error.message });
-      },
-      async () => {
-        try {
-          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          console.log('Download URL:', downloadURL);
+    if (files.video && files.video.length > 0) {
+      const videoFile = files.video[0];
+      videoUrl = await uploadFile(videoFile, 'videos', videoFile.name);
 
-          const studentJson = {
-            studentId: studentId,
-            title: title,
-            description: description,
-            videoUrl: downloadURL,
-            timestamp: new Date(),
-          };
-
-          await createData(process.env.ourStudentCollection, studentId, studentJson);
-
-          res.status(201).send({
-            success: true,
-            message: 'Student created successfully',
-            student: studentJson,
-          });
-        } catch (error) {
-          console.error('Error saving data:', error);
-          res.status(500).send({ message: 'Error saving data', error: error.message });
-        }
+      if (files.image && files.image.length > 0) {
+        const imageFile = files.image[0];
+        imageUrl = await uploadFile(imageFile, 'images', imageFile.name);
+      } else {
+        const frameBuffer = await extractFrameFromVideo(videoFile.buffer);
+        const frameFile = {
+          originalname: 'frame.jpg',
+          mimetype: 'image/jpeg',
+          buffer: frameBuffer,
+        };
+        imageUrl = await uploadFile(frameFile, 'images');
       }
-    );
+    } else {
+      throw new Error('Video file is required.');
+    }
+
+    const studentJson = {
+      studentId: studentId,
+      title: title,
+      description: description,
+      imageUrl: imageUrl,
+      videoUrl: videoUrl,
+      timestamp: new Date(),
+    };
+
+    await createData(process.env.ourStudentCollection, studentId, studentJson);
+
+    res.status(201).send({
+      success: true,
+      message: 'Student created successfully',
+      student: studentJson,
+    });
   } catch (error) {
     console.error('Error in student creation:', error);
     res.status(500).send({
@@ -130,12 +156,14 @@ export const createStudents = async (req, res) => {
           "videoUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/students%2Fviddemo1.mp4?alt=media&token=c1a87355-2d6e-49f5-b87c-8d67eaf0784b",
           "description": "gjygkjhjk",
           "title": "title2"
+          "imageUrl": "hgjhghj.com"
         },
         {
           "studentId": "78ffed10-3e19-43a5-88d7-a6d907f0c708",
           "videoUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/students%2Fviddemo1.mp4?alt=media&token=9481caa7-7bc3-446d-bc41-152eeffe558e",
           "description": "gfjghjgkjhgjgjgj",
           "title": "title1"
+          "imageUrl": "hgjhghj.com"
         }
       ]
     }
@@ -176,6 +204,7 @@ export const readAllStudent = async (req, res) => {
           "videoUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/students%2Fviddemo1.mp4?alt=media&token=c1a87355-2d6e-49f5-b87c-8d67eaf0784b",
           "description": "gjygkjhjk",
           "title": "title2"
+          "imageUrl": "hgjhghj.com"
         }
       }
 */
@@ -211,7 +240,8 @@ export const readSingleStudent = async (req, res) => {
       "description": "desc1"
     }
     file: { //req.file
-      "video": "file",
+      "video": "video file",
+      "image": "image file"
     }
     response: {
       "success": true,
@@ -220,14 +250,15 @@ export const readSingleStudent = async (req, res) => {
         "title": "title2",
         "description": "desc2_jhjhkhhkjhhkjjhjhkhkjkh",
         "videoUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/students%2F827f2156-239e-4673-a41c-7c29d921c956%2Fviddemo4.mp4?alt=media&token=15653233-06a6-4872-a74b-798c84700b1d"
+        "imageUrl": "hgjhghj.com"
       }
     }
 */
+
 export const updateStudent = async (req, res) => {
   try {
     const { studentId, title, description } = req.body;
-    const file = req.file;
-    var downloadURL;
+    const files = req.files;
 
     // Create the updates object only with provided fields
     const updates = {};
@@ -235,65 +266,71 @@ export const updateStudent = async (req, res) => {
     if (description) updates.description = description;
 
     if (!studentId) {
-      return res.status(400).send({ message: 'Error finding student' });
+      return res.status(400).send({ message: 'Student ID is required' });
     }
 
-    if (!title && !description && !file) {
+    if (!title && !description && !files) {
       return res.status(400).send({ message: 'Title, description, and video are required' });
     }
 
     const validateData = await readSingleData(process.env.ourStudentCollection, studentId);
 
-    if (validateData) {
-      console.log(file);
-      if (file) {
-        const storageRef = ref(storage, `${process.env.storagePath}/students/${studentId}/${file.originalname}`);
-        console.log(storageRef.fullPath);
-        const metadata = {
-          contentType: file.mimetype,
-        };
-
-        // Wrap the upload task in a Promise
-        const uploadPromise = new Promise((resolve, reject) => {
-          const uploadTask = uploadBytesResumable(storageRef, file.buffer, metadata);
-
-          uploadTask.on(
-            'state_changed',
-            (snapshot) => {
-              console.log('Upload state:', snapshot.state);
-              console.log('Bytes transferred:', snapshot.bytesTransferred);
-              console.log('Total bytes:', snapshot.totalBytes);
-            },
-            (error) => {
-              console.error('Upload error:', error);
-              reject({ message: 'Upload error', error: error.message });
-            },
-            async () => {
-              try {
-                downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                if (downloadURL) updates.videoUrl = downloadURL;
-                resolve();
-              } catch (error) {
-                console.error('Error getting download URL:', error);
-                reject({ message: 'Error getting download URL', error: error.message });
-              }
-            }
-          );
-        });
-
-        // Await the upload promise
-        await uploadPromise;
-      }
-
-      const student = await updateData(process.env.ourStudentCollection, studentId, updates)
-      console.log('success');
-
-      res.status(201).send({
-        success: true,
-        message: 'Student updated successfully',
-        student: updates,
-      });
+    if (!validateData) {
+      return res.status(404).send({ message: 'Student not found' });
     }
+
+    const uploadFile = (file, type) => {
+      return new Promise((resolve, reject) => {
+        const storageRef = ref(storage, `${process.env.storagePath}/students/${studentId}/${type}/${file.originalname}`);
+        const metadata = { contentType: file.mimetype };
+        const uploadTask = uploadBytesResumable(storageRef, file.buffer, metadata);
+
+        uploadTask.on(
+          'state_changed',
+          (snapshot) => {
+            console.log('Upload state:', snapshot.state);
+            console.log('Bytes transferred:', snapshot.bytesTransferred);
+            console.log('Total bytes:', snapshot.totalBytes);
+          },
+          (error) => {
+            console.error('Upload error:', error);
+            reject({ message: 'Upload error', error: error.message });
+          },
+          async () => {
+            try {
+              const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+              resolve(downloadURL);
+            } catch (error) {
+              console.error('Error getting download URL:', error);
+              reject({ message: 'Error getting download URL', error: error.message });
+            }
+          }
+        );
+      });
+    };
+
+    let imageUrl = null;
+    let videoUrl = null;
+
+    if (files.video && files.video.length > 0) {
+      const videoFile = files.video[0];
+      videoUrl = await uploadFile(videoFile, 'videos');
+      updates.videoUrl = videoUrl;
+
+      if (files.image && files.image.length > 0) {
+        const imageFile = files.image[0];
+        imageUrl = await uploadFile(imageFile, 'images');
+        updates.imageUrl = imageUrl;
+      }
+    }
+
+    const student = await updateData(process.env.ourStudentCollection, studentId, updates);
+
+    res.status(201).send({
+      success: true,
+      message: 'Student updated successfully',
+      student: updates,
+    });
   } catch (error) {
     console.error('Error in updating student:', error);
     res.status(500).send({
