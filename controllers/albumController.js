@@ -10,6 +10,7 @@ import { uploadVideo } from "../DB/storage.js";
 import { createData, createSubData, deleteData, deleteSubData, matchData, matchSubData, readAllData, readAllSubData, readSingleData, readSingleSubData, updateData, updateSubData } from "../DB/crumd.js";
 import { storage } from "../DB/firebase.js";
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { extractFrameFromVideo, uploadFile } from "../helper/mediaHelper.js";
 
 dotenv.config()
 
@@ -86,7 +87,10 @@ export const createAlbumFolder = async (req, res) => {
     albumFolderId,
     title
     } /at once only video/image
-    req.file 
+    files: {
+      "media": "video/image file",
+      "image": "image file for thumbnail"
+    }
     *req.headers.authorization = JWT token
     response: {
       "success": true,
@@ -95,6 +99,7 @@ export const createAlbumFolder = async (req, res) => {
         "albumFolderId": "686554da-5cbb-4200-893a-06a04decaf5f",
         "albumItemId": "cc82dc08-738a-445c-928c-119dbe00111f",
         "title": "title3",
+        "imageUrl": "bbnbn.com",
         "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/albums%2F686554da-5cbb-4200-893a-06a04decaf5f%2Fcc82dc08-738a-445c-928c-119dbe00111f%2Fviddemo1.mp4?alt=media&token=94b9be5e-9b4b-4a1e-b2df-875f2e02ac17",
         "timestamp": "2024-07-18T19:53:10.012Z"
       }
@@ -104,10 +109,10 @@ export const createAlbumFolder = async (req, res) => {
 export const createAlbumItem = async (req, res) => {
   try {
     const { albumFolderId, title } = req.body;
-    const file = req.file;
+    const files = req.files;
     const albumItemId = uuidv4();
 
-    if (!title || !file) {
+    if (!title || !files || !files.media) {
       return res.status(400).send({ message: 'Title and media are required' });
     }
 
@@ -117,58 +122,50 @@ export const createAlbumItem = async (req, res) => {
       return res.status(400).send({ message: 'Album does not exists' });
     }
 
-
     const validateItemData = await matchSubData(process.env.albumFolderCollection, process.env.albumItemCollection, albumFolderId, 'title', title);
     console.log(validateItemData.empty);
     if (!validateItemData.empty) {
       return res.status(400).send({ message: 'Album Item already exists' });
     }
 
-    const storageRef = ref(storage, `${process.env.storagePath}/albums/${albumFolderId}/${albumItemId}/${file.originalname}`);
-    console.log(storageRef.fullPath);
-    const metadata = {
-      contentType: file.mimetype,
+    let imageUrl = null;
+    let mediaUrl = null;
+    var mediaFile;
+
+    if (files.media && files.media.length > 0) {
+      mediaFile = files.media[0];
+      console.log(mediaFile);
+      mediaUrl = await uploadFile(mediaFile, 'videos', mediaFile.originalname, `albums/${albumFolderId}/${albumItemId}/media/${mediaFile.originalname}`);
+    }
+    if (files.image && files.image.length > 0) {
+      const imageFile = files.image[0];
+      imageUrl = await uploadFile(imageFile, 'images', `albums/${albumFolderId}/${albumItemId}/image/${mediaFile.originalname}`);
+    } else {
+      const frameBuffer = await extractFrameFromVideo(mediaFile.buffer);
+      const frameFile = {
+        originalname: 'frame.jpg',
+        mimetype: 'image/jpeg',
+        buffer: frameBuffer,
+      };
+      imageUrl = await uploadFile(frameFile, 'images', `albums/${albumFolderId}/${albumItemId}/image/${frameFile.originalname}`);
+    }
+
+    const albumJson = {
+      albumFolderId: albumFolderId,
+      albumItemId: albumItemId,
+      title: title,
+      mediaUrl: mediaUrl,
+      imageUrl: imageUrl,
+      timestamp: new Date(),
     };
 
-    const uploadTask = uploadBytesResumable(storageRef, file.buffer, metadata);
+    await createSubData(process.env.albumFolderCollection, process.env.albumItemCollection, albumFolderId, albumItemId, albumJson);
 
-    uploadTask.on(
-      'state_changed',
-      (snapshot) => {
-        console.log('Upload state:', snapshot.state);
-        console.log('Bytes transferred:', snapshot.bytesTransferred);
-        console.log('Total bytes:', snapshot.totalBytes);
-      },
-      (error) => {
-        console.error('Upload error:', error);
-        res.status(500).send({ message: 'Upload error', error: error.message });
-      },
-      async () => {
-        try {
-          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          console.log('Download URL:', downloadURL);
-
-          const albumJson = {
-            albumFolderId: albumFolderId,
-            albumItemId: albumItemId,
-            title: title,
-            mediaUrl: downloadURL,
-            timestamp: new Date(),
-          };
-
-          await createSubData(process.env.albumFolderCollection, process.env.albumItemCollection, albumFolderId, albumItemId, albumJson);
-
-          res.status(201).send({
-            success: true,
-            message: 'Student created successfully',
-            albumItem: albumJson,
-          });
-        } catch (error) {
-          console.error('Error saving data:', error);
-          res.status(500).send({ message: 'Error saving data', error: error.message });
-        }
-      }
-    );
+    res.status(201).send({
+      success: true,
+      message: 'Album created successfully',
+      albumItem: albumJson,
+    });
   } catch (error) {
     console.error('Error in album creation:', error);
     return res.status(500).send({
@@ -179,7 +176,7 @@ export const createAlbumItem = async (req, res) => {
   }
 };
 
-//function that reads album folder document 
+//function that reads all album folder document 
 /*
     request url = http://localhost:8080/api/v1/album/read-all-album-folder
     method = GET
@@ -275,6 +272,7 @@ export const readSingleAlbumFolder = async (req, res) => {
       "albumItem": [
         {
           "albumFolderId": "686554da-5cbb-4200-893a-06a04decaf5f",
+          "imageUrl": "bbnbn.com",
           "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/albums%2F686554da-5cbb-4200-893a-06a04decaf5f%2F8a9ebb00-714f-4ed7-8e89-161e35b38802%2Flogin3c.jpg?alt=media&token=e17fe9f8-1809-4bd5-8e17-1f0f21b91afb",
           "albumItemId": "8a9ebb00-714f-4ed7-8e89-161e35b38802",
           "title": "title1",
@@ -285,6 +283,7 @@ export const readSingleAlbumFolder = async (req, res) => {
         },
         {
           "albumFolderId": "686554da-5cbb-4200-893a-06a04decaf5f",
+          "imageUrl": "bbnbn.com",
           "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/albums%2F686554da-5cbb-4200-893a-06a04decaf5f%2Fbada917a-ca12-4233-a1fe-c1068b6eed3b%2Flogin3c.jpg?alt=media&token=bce53592-88bb-4d11-947f-e1662991f744",
           "albumItemId": "bada917a-ca12-4233-a1fe-c1068b6eed3b",
           "title": "title2",
@@ -332,6 +331,7 @@ export const readAllAlbumItems = async (req, res) => {
       "message": "Album read successfully",
       "albumItem": {
         "albumFolderId": "686554da-5cbb-4200-893a-06a04decaf5f",
+        "imageUrl": "bbnbn.com",
         "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/albums%2F686554da-5cbb-4200-893a-06a04decaf5f%2Fcc82dc08-738a-445c-928c-119dbe00111f%2Fviddemo1.mp4?alt=media&token=94b9be5e-9b4b-4a1e-b2df-875f2e02ac17",
         "albumItemId": "cc82dc08-738a-445c-928c-119dbe00111f",
         "title": "title3",
@@ -364,7 +364,7 @@ export const readSingleAlbumItem = async (req, res) => {
   }
 };
 
-//function that reads single album folder document 
+//function that updates single album folder document 
 /*
     request url = http://localhost:8080/api/v1/album/update-album-folder
     method = POST
@@ -415,7 +415,7 @@ export const updateAlbumFolder = async (req, res) => {
   }
 };
 
-//function to update single our Students details
+//function to update single album folder sub item details
 /* 
     request url = http://localhost:8080/api/v1/album/update-album-item
     method = POST
@@ -425,14 +425,16 @@ export const updateAlbumFolder = async (req, res) => {
       "albumItemId": "albumItemId",
       "title": "text1"
     }
-    file: { //req.file
-      "file": "file",
+    files: {
+      "media": "video/image file",
+      "image": "image file for thumbnail"
     }
       response: {
         "success": true,
         "message": "Album Item updated successfully",
         "student": {
           "title": "title2.0",
+          "imageUrl": "bbnbn.com",
           "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/albums%2F686554da-5cbb-4200-893a-06a04decaf5f%2Fbada917a-ca12-4233-a1fe-c1068b6eed3b%2Fviddemo3.mp4?alt=media&token=a10e9f6a-da37-4001-bca9-6bc58cdecc65"
         }
       }
@@ -440,81 +442,56 @@ export const updateAlbumFolder = async (req, res) => {
 export const updateAlbumItem = async (req, res) => {
   try {
     const { albumFolderId, albumItemId, title } = req.body;
-    const file = req.file;
-    var downloadURL;
+    const files = req.files;
 
     // Create the updates object only with provided fields
     const updates = {};
     if (title) updates.title = title;
 
     if (!albumFolderId) {
-      return res.status(400).send({ message: 'Error finding album folder' });
+      return res.status(400).send({ message: 'Album folder ID is required' });
     }
 
     if (!albumItemId) {
-      return res.status(400).send({ message: 'Error finding album item' });
+      return res.status(400).send({ message: 'Album item ID is required' });
     }
 
-
-    if (!title || !file) {
+    if (!title && !files) {
       return res.status(400).send({ message: 'Title and media are required' });
     }
-    console.log(albumItemId);
 
     const validateData = await readSingleSubData(process.env.albumFolderCollection, process.env.albumItemCollection, albumFolderId, albumItemId);
 
-    console.log(validateData);
-    if (validateData) {
-      console.log(albumItemId);
-      console.log(file);
-      if (file) {
-        const storageRef = ref(storage, `${process.env.storagePath}/albums/${albumFolderId}/${albumItemId}/${file.originalname}`);
-        console.log(storageRef.fullPath);
-        const metadata = {
-          contentType: file.mimetype,
-        };
-
-        // Wrap the upload task in a Promise
-        const uploadPromise = new Promise((resolve, reject) => {
-          const uploadTask = uploadBytesResumable(storageRef, file.buffer, metadata);
-
-          uploadTask.on(
-            'state_changed',
-            (snapshot) => {
-              console.log('Upload state:', snapshot.state);
-              console.log('Bytes transferred:', snapshot.bytesTransferred);
-              console.log('Total bytes:', snapshot.totalBytes);
-            },
-            (error) => {
-              console.error('Upload error:', error);
-              reject({ message: 'Upload error', error: error.message });
-            },
-            async () => {
-              try {
-                downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                if (downloadURL) updates.mediaUrl = downloadURL;
-                resolve();
-              } catch (error) {
-                console.error('Error getting download URL:', error);
-                reject({ message: 'Error getting download URL', error: error.message });
-              }
-            }
-          );
-        });
-
-        // Await the upload promise
-        await uploadPromise;
-      }
-
-      const albumItem = await updateSubData(process.env.albumFolderCollection, process.env.albumItemCollection, albumFolderId, albumItemId, updates)
-      console.log('success');
-
-      res.status(201).send({
-        success: true,
-        message: 'Album Item updated successfully',
-        student: updates,
-      });
+    if (!validateData) {
+      return res.status(404).send({ message: 'Album item not found' });
     }
+
+    let imageUrl = null;
+    let mediaUrl = null;
+    var mediaFile;
+
+    if (files.media && files.media.length > 0) {
+      mediaFile = files.media[0];
+      const mediaPath = `albums/${albumFolderId}/${albumItemId}/media/${mediaFile.originalname}`;
+      mediaUrl = await uploadFile(mediaFile, 'videos', mediaPath);
+      updates.mediaUrl = mediaUrl;
+    }
+
+    if (files.image && files.image.length > 0) {
+      const imageFile = files.image[0];
+      const imagePath = `albums/${albumFolderId}/${albumItemId}/image/${imageFile.originalname}`;
+      imageUrl = await uploadFile(imageFile, 'images', imagePath);
+      updates.imageUrl = imageUrl;
+    }
+
+    const albumItem = await updateSubData(process.env.albumFolderCollection, process.env.albumItemCollection, albumFolderId, albumItemId, updates)
+    console.log('success');
+
+    res.status(201).send({
+      success: true,
+      message: 'Album Item updated successfully',
+      student: updates,
+    });
   } catch (error) {
     console.error('Error in updating student:', error);
     res.status(500).send({

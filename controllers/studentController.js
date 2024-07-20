@@ -30,7 +30,7 @@ const bucket = admin.storage().bucket()
     }
     file: { //req.file
       "video": "video file",
-      "image": "image file"
+      "image": "image file for thumbnail"
     }
     response: {
       "success": true,
@@ -49,10 +49,6 @@ export const createStudents = async (req, res) => {
     const { title, description } = req.body;
     console.log(req)
     const files = req.files;
-    console.log("file1", req.file)
-    console.log("file2", req.files)
-    console.log("file3", req.files[0])
-    console.log("file4", files)
     const studentId = uuidv4();
 
     if (!title || !description || !files || !files.video) {
@@ -239,7 +235,7 @@ export const readSingleStudent = async (req, res) => {
       "title": "title1",
       "description": "desc1"
     }
-    file: { //req.file
+    files: { //req.files
       "video": "video file",
       "image": "image file"
     }
