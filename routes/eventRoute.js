@@ -18,7 +18,7 @@ const router = express.Router();
 //routing
 
 //Verify Phone Number || POST
-router.post('/create-event', upload.single('video'), createEvent);
+router.post('/create-event', upload, createEvent);
 
 //Verify Phone Number || POST
 router.get('/read-all-event', readAllEvent);
@@ -27,7 +27,7 @@ router.get('/read-all-event', readAllEvent);
 router.post('/read-event', readSingleEvent);
 
 //Verify Phone Number || POST
-router.post('/update-event', upload.single('video'), updateEvent);
+router.post('/update-event', upload, updateEvent);
 
 //Verify Phone Number || POST
 router.post('/delete-event', deleteEvent);
