@@ -10,7 +10,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { uploadVideo } from "../DB/storage.js";
 import { createData, deleteData, matchData, readAllData, readSingleData, updateData } from "../DB/crumd.js";
 import { storage } from "../DB/firebase.js";
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL} from 'firebase/storage';
 
 dotenv.config()
 
@@ -255,3 +255,62 @@ export const adminUpdateController = async (req, res) => {
     });
   }
 };
+
+export const changeProfile = async (req, res) => {
+  if (req.file) {
+    const { adminId } = req.body
+    const file = req.file
+    console.log(file)
+    if (adminId) {
+      const storageRef = ref(storage, `${process.env.storagePath}/admins/${adminId}/${file.originalname}`);
+
+      const metadata = {
+        contentType: file.mimetype,
+      };
+
+      // Upload the file and metadata
+      const uploadTask = uploadBytesResumable(storageRef, file.buffer, metadata);
+      
+      uploadTask.on('state_changed', 
+        (snapshot) => {
+          // Observe state change events such as progress, pause, and resume
+          // Get task progress, including the number of bytes uploaded and the total number of bytes to be uploaded
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          console.log('Upload is ' + progress + '% done');
+          switch (snapshot.state) {
+            case 'paused':
+              console.log('Upload is paused');
+              break;
+            case 'running':
+              console.log('Upload is running');
+              break;
+          }
+        }, 
+        (error) => {
+          // Handle unsuccessful uploads
+        }, 
+        async () => {
+          // Handle successful uploads on complete
+          // For instance, get the download URL: https://firebasestorage.googleapis.com/...
+          const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref)
+          console.log("new image",downloadUrl)
+          const updates = {
+            photoUrl : downloadUrl
+          }
+          await updateData(process.env.adminCollection, adminId, updates);
+          res.status(200).send({
+            success : true,
+            photoUrl : downloadUrl,
+            message : "Profile changed successfully"
+          })
+        }
+      );
+    }
+    else {
+      return res.status(401).send("Authorization error")
+    }
+  }
+  else {
+    return res.status(400).send("image is not provided")
+  }
+}
