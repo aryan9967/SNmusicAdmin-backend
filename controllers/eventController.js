@@ -10,7 +10,7 @@ import { uploadVideo } from "../DB/storage.js";
 import { createData, deleteData, matchData, readAllData, readSingleData, updateData } from "../DB/crumd.js";
 import { storage } from "../DB/firebase.js";
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { addTextWatermarkToImage, addTextWatermarkToVideo, extractFrameFromVideo, uploadFile } from "../helper/mediaHelper.js";
+import { addTextWatermarkToImage, addTextWatermarkToVideo, extractFrameFromVideo, uploadFile, uploadWaterMarkFile } from "../helper/mediaHelper.js";
 
 dotenv.config()
 
@@ -268,8 +268,9 @@ export const updateEvent = async (req, res) => {
     if (files.video && files.video.length > 0) {
       const videoFile = files.video[0];
       console.log(videoFile);
-      videoUrl = await uploadFile(videoFile, 'videos', `event/${eventId}/video/${videoFile.originalname}`);
+      // videoUrl = await uploadFile(videoFile, 'videos', `event/${eventId}/video/${videoFile.originalname}`);
       vidWatermark = await addTextWatermarkToVideo(videoFile.buffer, 'SN MUSIC')
+      vidWatermarkUrl = await uploadWaterMarkFile(vidWatermark, 'videos', `event/${eventId}/watermark/${videoFile.originalname}`);
       updates.videoUrl = videoUrl;
     }
 
@@ -290,7 +291,6 @@ export const updateEvent = async (req, res) => {
       event: updates,
       watermarkUrl,
       vidWatermarkUrl,
-      vidWatermark
     });
   } catch (error) {
     console.error('Error in updating event:', error);
