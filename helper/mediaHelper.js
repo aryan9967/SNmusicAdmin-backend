@@ -5,7 +5,7 @@ import ffmpeg from 'fluent-ffmpeg';
 import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
 import { PassThrough } from 'stream';
 import FormData from 'form-data';
-import fs, { writeFile } from 'fs';
+import fs from 'fs/promises';
 import os from 'os';
 import sharp from 'sharp';
 import { fileURLToPath } from 'url';
@@ -41,6 +41,38 @@ export const uploadFile = (file, type, folderPath) => {
       contentType: type === 'images' ? 'image/jpeg' : 'video/mp4',
     };
     const uploadTask = uploadBytesResumable(storageRef, file.buffer, metadata);
+
+    uploadTask.on(
+      'state_changed',
+      (snapshot) => {
+        console.log('Upload state:', snapshot.state);
+        console.log('Bytes transferred:', snapshot.bytesTransferred);
+        console.log('Total bytes:', snapshot.totalBytes);
+      },
+      (error) => {
+        console.error('Upload error:', error);
+        reject({ message: 'Upload error', error: error.message });
+      },
+      async () => {
+        try {
+          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+          resolve(downloadURL);
+        } catch (error) {
+          console.error('Error getting download URL:', error);
+          reject({ message: 'Error getting download URL', error: error.message });
+        }
+      }
+    );
+  });
+};
+
+export const uploadWaterMarkFile = (buffer, type, folderPath) => {
+  return new Promise((resolve, reject) => {
+    const storageRef = ref(storage, `${process.env.storagePath}/${folderPath}`);
+    const metadata = {
+      contentType: type === 'images' ? 'image/jpeg' : 'video/mp4',
+    };
+    const uploadTask = uploadBytesResumable(storageRef, buffer, metadata);
 
     uploadTask.on(
       'state_changed',
@@ -133,48 +165,59 @@ export const addTextWatermarkToImage = async (imageBuffer, text) => {
 };
 
 
-
 // Function to add watermark to video
-export const addTextWatermarkToVideo = async (videoBuffer, text) => {
+export const addTextWatermarkToVideo = async (fileBuffer, text) => {
   const tmpDir = os.tmpdir();
-  const tmpVideoPath = path.join(tmpDir, 'tmp-video.mp4');
-  fs.writeFileSync(tmpVideoPath, videoBuffer);
+  const inputPath = path.join(tmpDir, `input-${Date.now()}.mp4`);
+  const outputPath = path.join(tmpDir, `output-${Date.now()}.mp4`);
 
-  const framePath = path.join(tmpDir, 'frame.jpg');
-  const outputPath = path.join(__dirname, 'output', `watermarked-${text}`);
-  // const inputVideoPath = path.join(__dirname, '../images', file.originalname);
-  const outputVideoPath = path.join(__dirname, '../images', `watermarked-${text}`);
-  await fs.writeFile(framePath, videoBuffer);
+  // Path to a font file (ensure this path is correct)
+  const fontPath = path.join(__dirname, '../images/PoppinsMedium.ttf');
+
+  // Write the uploaded file buffer to a temporary file
+  await fs.writeFile(inputPath, fileBuffer);
 
   await new Promise((resolve, reject) => {
-    ffmpeg(framePath)
-      .outputOptions('-vf', `drawtext=text='${text}':fontcolor=white:fontsize=24:x=10:y=10`)
-      .on('start', commandLine => {
+    ffmpeg(inputPath)
+      .videoFilters({
+        filter: 'drawtext',
+        options: {
+          text: text,
+          fontfile: fontPath,
+          fontcolor: 'white',
+          fontsize: 24,
+          x: '(w-text_w-10)',  // 10 pixels from the right
+          y: '(h-text_h-10)',
+        }
+      })
+      .on('start', (commandLine) => {
         console.log('Spawned FFmpeg with command: ' + commandLine);
       })
-      .on('progress', progress => {
-        console.log('Processing: ' + progress.percent + '% done');
-      })
       .on('error', (err, stdout, stderr) => {
-        console.error('Error: ' + err.message);
+        console.error('An error occurred: ' + err.message);
         console.error('ffmpeg stderr: ' + stderr);
         reject(err);
       })
       .on('end', () => {
-        console.log('Watermark added successfully');
+        console.log('Processing finished!');
         resolve();
       })
-      .save(outputVideoPath);
+      .save(outputPath);
   });
+
   // Read the processed video buffer
-  const watermarkedBuffer = await fs.readFile(outputVideoPath);
+  const watermarkedBuffer = await fs.readFile(outputPath);
 
   // Clean up the temporary files
-  await fs.unlink(framePath);
-  await fs.unlink(outputVideoPath);
+  await fs.unlink(inputPath);
+  await fs.unlink(outputPath);
 
   return watermarkedBuffer;
 };
+
+
+
+
 
 // export const addTextWatermarkToVideo = async (videoFile, text) => {
 //   const form = new FormData();

@@ -144,6 +144,40 @@ export const readFieldData = async (collectionName, id, fieldName) => {
   }
 }
 
+export const readSubFieldData = async (collectionName, id, fieldName, subId) => {
+  try {
+    // Get the document reference
+    const docRef = await db.collection(collectionName).doc(id).get();
+
+    if (!docRef) {
+      console.log('No such document!');
+      return null;
+    }
+
+    // Get the data from the document
+    const data = docRef.data();
+
+    if (!data || !data[fieldName]) {
+      console.log('No field data found!');
+      return null;
+    }
+
+    // Find the object in the array with the specified imageId
+    const item = data[fieldName].find((item) => item.imageId === subId);
+
+    if (!item) {
+      console.log('No item found with the specified imageId!');
+      return null;
+    }
+
+    // Return the found item
+    return item;
+  } catch (error) {
+    console.error('Error reading document:', error);
+    return null;
+  }
+};
+
 export const matchData = async (collectionName, key, value) => {
   const querySnapshot = await db
     .collection(collectionName)
@@ -199,6 +233,49 @@ export const updateSubData = async (firstCollectionName, secondCollectionName, i
   }
 };
 
+export const updateSubFieldData = async (collectionName, id, fieldName, subId, newObject) => {
+  try {
+    // Get the document reference
+    const docRef = db.collection(collectionName).doc(id);
+
+    const docSnap = await docRef.get();
+
+    if (!docSnap) {
+      console.log('No such document!');
+      return null;
+    }
+
+    // Get the data from the document
+    const data = docSnap.data();
+
+    if (!data || !data[fieldName]) {
+      console.log('No field data found!');
+      return null;
+    }
+
+    // Find the index of the object with the specified imageId
+    const itemIndex = data[fieldName].findIndex((item) => item.imageId === subId);
+
+    if (itemIndex === -1) {
+      console.log('No item found with the specified imageId!');
+      return null;
+    }
+
+    // 5. Replace the object in the array with the new object
+    var updateData = data[fieldName][itemIndex] = { ...newObject, subId }; // Ensures the imageId remains the same
+
+    const update = docRef.update({
+      [fieldName]: data[fieldName],
+    });
+
+    // Return the found item
+    return updateData;
+  } catch (error) {
+    console.error('Error reading document:', error);
+    return null;
+  }
+};
+
 export const deleteData = async (collectionName, id) => {
   try {
     const response = await db
@@ -224,5 +301,48 @@ export const deleteSubData = async (firstCollectionName, secondCollectionName, i
     return response;
   } catch (error) {
     console.log(error);
+  }
+};
+
+export const deleteSubFieldData = async (collectionName, id, fieldName, subId) => {
+  try {
+    // Get the document reference
+    const docRef = db.collection(collectionName).doc(id);
+
+    const docSnap = await docRef.get();
+
+    if (!docSnap) {
+      console.log('No such document!');
+      return null;
+    }
+
+    // Get the data from the document
+    const data = docSnap.data();
+
+    if (!data || !data[fieldName]) {
+      console.log('No field data found!');
+      return null;
+    }
+
+    // Find the index of the object with the specified imageId
+    const itemIndex = data[fieldName].findIndex((item) => item.imageId === subId);
+
+    if (itemIndex === -1) {
+      console.log('No item found with the specified imageId!');
+      return null;
+    }
+
+    // 5. Remove the object from the array
+    var updateData = data[fieldName].splice(itemIndex, 1);
+
+    const update = docRef.update({
+      [fieldName]: data[fieldName],
+    });
+
+    // Return the found item
+    return updateData;
+  } catch (error) {
+    console.error('Error reading document:', error);
+    return null;
   }
 };
