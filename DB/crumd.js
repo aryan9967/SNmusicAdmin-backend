@@ -73,6 +73,22 @@ export const readAllData = async (collectionName) => {
   }
 };
 
+export const readAllLimitData = async (collectionName) => {
+  try {
+    //Retrieve user data
+    const querySnapshot = await db
+      .collection(collectionName)
+      .get();
+    let queryData = [];
+    querySnapshot.forEach((doc) => {
+      queryData.push(doc.data());
+    });
+    return queryData;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 export const readAllSubData = async (firstCollectionName, secondCollectionName, id) => {
   try {
     //Retrieve user data

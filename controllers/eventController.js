@@ -10,7 +10,7 @@ import { uploadVideo } from "../DB/storage.js";
 import { createData, deleteData, matchData, readAllData, readSingleData, updateData } from "../DB/crumd.js";
 import { storage } from "../DB/firebase.js";
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { extractFrameFromVideo, uploadFile } from "../helper/mediaHelper.js";
+import { addTextWatermarkToImage, addTextWatermarkToVideo, extractFrameFromVideo, uploadFile } from "../helper/mediaHelper.js";
 
 dotenv.config()
 
@@ -65,11 +65,11 @@ export const createEvent = async (req, res) => {
 
     if (files.video && files.video.length > 0) {
       const videoFile = files.video[0];
-      videoUrl = await uploadFile(videoFile, 'videos', `event/${studentId}/video/${videoFile.originalname}`);
+      videoUrl = await uploadFile(videoFile, 'videos', `event/${eventId}/video/${videoFile.originalname}`);
 
       if (files.image && files.image.length > 0) {
         const imageFile = files.image[0];
-        imageUrl = await uploadFile(imageFile, 'images', `event/${studentId}/image/${imageFile.originalname}`);
+        imageUrl = await uploadFile(imageFile, 'images', `event/${eventId}/image/${imageFile.originalname}`);
       } else {
         const frameBuffer = await extractFrameFromVideo(videoFile.buffer);
         const frameFile = {
@@ -77,7 +77,7 @@ export const createEvent = async (req, res) => {
           mimetype: 'image/jpeg',
           buffer: frameBuffer,
         };
-        imageUrl = await uploadFile(frameFile, 'images', `event/${studentId}/image/${frameFile.originalname}`);
+        imageUrl = await uploadFile(frameFile, 'images', `event/${eventId}/image/${frameFile.originalname}`);
       }
     } else {
       throw new Error('Video file is required.');
@@ -87,7 +87,8 @@ export const createEvent = async (req, res) => {
       eventId: eventId,
       title: title,
       description: description,
-      videoUrl: downloadURL,
+      videoUrl: videoUrl,
+      imageUrl: imageUrl,
       timestamp: new Date(),
     };
 
@@ -244,6 +245,7 @@ export const updateEvent = async (req, res) => {
     const updates = {};
     if (title) updates.title = title;
     if (description) updates.description = description;
+    const watermarkPath = "../../SNmusicAdmin/admin/src/images/watermark2.png";
 
     if (!eventId) {
       return res.status(400).send({ message: 'Error finding student' });
@@ -261,17 +263,22 @@ export const updateEvent = async (req, res) => {
 
     let imageUrl = null;
     let videoUrl = null;
+    var watermarkUrl, vidWatermarkUrl, vidWatermark;
 
     if (files.video && files.video.length > 0) {
       const videoFile = files.video[0];
+      console.log(videoFile);
       videoUrl = await uploadFile(videoFile, 'videos', `event/${eventId}/video/${videoFile.originalname}`);
+      vidWatermark = await addTextWatermarkToVideo(videoFile.buffer, 'SN MUSIC')
       updates.videoUrl = videoUrl;
+    }
 
-      if (files.image && files.image.length > 0) {
-        const imageFile = files.image[0];
-        imageUrl = await uploadFile(imageFile, 'images', `event/${eventId}/image/${imageFile.originalname}`);
-        updates.imageUrl = imageUrl;
-      }
+    if (files.image && files.image.length > 0) {
+      const imageFile = files.image[0];
+      console.log(imageFile);
+      const watermarkedFrameBuffer = await addTextWatermarkToImage(imageFile.buffer, 'SN MUSIC');
+      watermarkUrl = await uploadFile(watermarkedFrameBuffer, 'images', `event/${eventId}/image/${watermarkedFrameBuffer.originalname}`);
+      updates.imageUrl = watermarkUrl;
     }
 
     const student = await updateData(process.env.eventsCollection, eventId, updates)
@@ -280,7 +287,10 @@ export const updateEvent = async (req, res) => {
     res.status(201).send({
       success: true,
       message: 'Event updated successfully',
-      student: updates,
+      event: updates,
+      watermarkUrl,
+      vidWatermarkUrl,
+      vidWatermark
     });
   } catch (error) {
     console.error('Error in updating event:', error);
