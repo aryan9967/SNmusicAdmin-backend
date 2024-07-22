@@ -15,7 +15,7 @@ import { addTextWatermarkToImage, addTextWatermarkToVideo, extractFrameFromVideo
 
 dotenv.config()
 
-const CACHE_DURATION = 10 * 60 * 1000 //10 minutes
+const CACHE_DURATION = 24 * 60 * 60 * 1000; //24 hours
 
 // Multer configuration for file uploads
 const upload = multer({ storage: multer.memoryStorage() });
@@ -99,6 +99,8 @@ export const createEvent = async (req, res) => {
     };
 
     await createData(process.env.eventsCollection, eventId, eventJson);
+
+    cache.del('all_events');
 
     res.status(201).send({
       success: true,
@@ -319,6 +321,7 @@ export const updateEvent = async (req, res) => {
 
     const student = await updateData(process.env.eventsCollection, eventId, updates)
     console.log('success');
+    cache.del('all_events');
 
     res.status(201).send({
       success: true,
@@ -363,6 +366,7 @@ export const deleteEvent = async (req, res) => {
       if (validateData) {
         var eventData = await deleteData(process.env.eventsCollection, eventId);
         console.log('success');
+        cache.del('all_events');
 
         return res.status(201).send({
           success: true,
@@ -371,8 +375,11 @@ export const deleteEvent = async (req, res) => {
         });
       }
     } else {
+      cache.del('all_events');
+
       return res.send({ message: "Error while finding student" })
     }
+    cache.del('all_events');
 
   } catch (error) {
     console.error('Error in student deletion:', error);
