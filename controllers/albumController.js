@@ -22,7 +22,7 @@ const bucket = admin.storage().bucket();
 
 //function that creates album folder document (title )
 /*
-    request url = http://localhost:8080/api/v1/album/create-album
+    request url = http://localhost:8080/api/v1/album/create-album-folder
     method = POST
     req.body =  {
     title
@@ -41,7 +41,7 @@ const bucket = admin.storage().bucket();
 
 export const createAlbumFolder = async (req, res) => {
   try {
-    const { title } = req.body;
+    const { title, description } = req.body;
 
     const albumFolderId = uuidv4();
     if (!title) {
@@ -58,6 +58,7 @@ export const createAlbumFolder = async (req, res) => {
     const albumJson = {
       albumFolderId: albumFolderId,
       title: title,
+      description,
       timestamp: new Date()
     };
 
