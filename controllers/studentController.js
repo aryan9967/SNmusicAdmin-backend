@@ -119,28 +119,26 @@ export const createStudents = async (req, res) => {
 
 //function to read all our Students details
 /* 
-    request url = http://localhost:8080/api/v1/student/read-all-student
-    method = GET
-    response : {
-      "success": true,
-      "message": "student read successfully",
-      "student": [
-        {
-          "studentId": "0cfc8500-8ebd-44ac-b2f8-f46e712e24ed",
-          "videoUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/students%2Fviddemo1.mp4?alt=media&token=c1a87355-2d6e-49f5-b87c-8d67eaf0784b",
-          "description": "gjygkjhjk",
-          "title": "title2",
-          "imageUrl": "hgjhghj.com"
-        },
-        {
-          "studentId": "78ffed10-3e19-43a5-88d7-a6d907f0c708",
-          "videoUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/students%2Fviddemo1.mp4?alt=media&token=9481caa7-7bc3-446d-bc41-152eeffe558e",
-          "description": "gfjghjgkjhgjgjgj",
-          "title": "title1",
-          "imageUrl": "hgjhghj.com"
-        }
-      ]
-    }
+  request url = http://localhost:8080/api/v1/student/read-all-student
+  method = GET
+  response : {
+    "success": true,
+    "message": "students read successfully",
+    "student": [
+      {
+        "studentId": "023d36d2-a268-4320-878d-e89d492e4dd5",
+        "description": "Steady learning reaps result, practicing for a year",
+        "imageUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/students%2Fee8ae814-b182-449f-a7e9-09ac1acdf87e%2Fimages%2Fframe.jpg?alt=media&token=eb0333dc-20b5-40ee-9170-44df42fd9671",
+        "title": "Aryan"
+      },
+      {
+        "studentId": "243362b2-d4b1-4b23-81fc-6df4d5209801",
+        "description": "Practice makes a man perfect",
+        "imageUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/students%2Fee8ae814-b182-449f-a7e9-09ac1acdf87e%2Fimages%2Fframe.jpg?alt=media&token=eb0333dc-20b5-40ee-9170-44df42fd9671",
+        "title": "Hard Work"
+      }
+    ]
+  }
 */
 
 export const readAllStudent = async (req, res) => {
@@ -166,6 +164,45 @@ export const readAllStudent = async (req, res) => {
   }
 };
 
+//function to read single videoUrl of our Student details
+/* 
+    request url = http://localhost:8080/api/v1/student/read-student-video
+    method = POST
+    {
+      "studentId": "jjhjhjsagsa" //your doc id
+    }
+    response: {
+      "success": true,
+      "message": "student video read successfully",
+      "student": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/event%2Fa7c59a85-9090-43d5-b974-36f38ce23197%2Fwatermark%2FvidInstrument2.mp4?alt=media&token=365595af-367a-4fa7-91f5-047044c3c453"
+    }
+*/
+
+export const readStudentVideo = async (req, res) => {
+  try {
+    const { studentId } = req.body;
+    if (!studentId) {
+      return res.status(400).send({ message: 'student id is required' });
+    }
+    // var event = await readAllData(process.env.eventsCollection);
+    var event = await readFieldData(process.env.ourStudentCollection, studentId, 'videoUrl');
+
+    return res.status(201).send({
+      success: true,
+      message: 'student video read successfully',
+      event: event
+    });
+  } catch (error) {
+    console.error('Error in reading all student:', error);
+    return res.status(500).send({
+      success: false,
+      message: 'Error in reading all student',
+      error: error.message,
+    });
+  }
+};
+
+
 //function to read single document of our Students details
 /* 
     request url = http://localhost:8080/api/v1/student/read-student
@@ -175,7 +212,7 @@ export const readAllStudent = async (req, res) => {
     }
       response: {
         "success": true,
-        "message": "Album read successfully",
+        "message": "student read successfully",
         "student": {
           "studentId": "0cfc8500-8ebd-44ac-b2f8-f46e712e24ed",
           "videoUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/students%2Fviddemo1.mp4?alt=media&token=c1a87355-2d6e-49f5-b87c-8d67eaf0784b",
