@@ -7,12 +7,15 @@ import { FieldValue } from "firebase-admin/firestore"
 import slugify from "slugify";
 import { v4 as uuidv4 } from 'uuid';
 import { uploadVideo } from "../DB/storage.js";
+import cache from "memory-cache"
 import { createData, deleteData, matchData, readAllData, readAllLimitData, readSingleData, updateData } from "../DB/crumd.js";
 import { storage } from "../DB/firebase.js";
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { addTextWatermarkToImage, addTextWatermarkToVideo, uploadFile, uploadWaterMarkFile } from "../helper/mediaHelper.js";
 
 dotenv.config()
+
+const CACHE_DURATION = 24 * 60 * 60 * 1000; //24 hours
 
 // Multer configuration for file uploads
 const upload = multer({ storage: multer.memoryStorage() });
@@ -91,6 +94,8 @@ export const createInstrument = async (req, res) => {
 
         await createData(process.env.instrumentCollection, instrumentId, instrumentJson);
 
+        cache.del('instrument');
+
         res.status(201).send({
             success: true,
             message: 'Instrument created successfully',
@@ -140,8 +145,11 @@ export const createInstrument = async (req, res) => {
 
 export const readAllInstrument = async (req, res) => {
     try {
+        var key = "instrument"
         var instrument = await readAllLimitData(process.env.instrumentCollection, ['instrumentId', 'imageUrl', 'title']);
         console.log('success');
+
+        cache.put(key, instrument, CACHE_DURATION)
 
         return res.status(201).send({
             success: true,
@@ -254,36 +262,6 @@ export const readSingleInstrument = async (req, res) => {
 
         if (title) updates.title = title;
 
-        const uploadFile = (file, type) => {
-            return new Promise((resolve, reject) => {
-                const storageRef = ref(storage, `${process.env.storagePath}/instruments/${instrumentId}/${type}/${file.originalname}`);
-                const metadata = { contentType: file.mimetype };
-                const uploadTask = uploadBytesResumable(storageRef, file.buffer, metadata);
-
-                uploadTask.on(
-                    'state_changed',
-                    (snapshot) => {
-                        console.log('Upload state:', snapshot.state);
-                        console.log('Bytes transferred:', snapshot.bytesTransferred);
-                        console.log('Total bytes:', snapshot.totalBytes);
-                    },
-                    (error) => {
-                        console.error('Upload error:', error);
-                        reject({ message: 'Upload error', error: error.message });
-                    },
-                    async () => {
-                        try {
-                            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                            resolve(downloadURL);
-                        } catch (error) {
-                            console.error('Error getting download URL:', error);
-                            reject({ message: 'Error getting download URL', error: error.message });
-                        }
-                    }
-                );
-            });
-        };
-
         var imgWatermarkUrl, vidWatermarkUrl, vidWatermark;
 
         if (files.video && files.video.length > 0) {
@@ -304,6 +282,8 @@ export const readSingleInstrument = async (req, res) => {
         }
 
         await updateData(process.env.instrumentCollection, instrumentId, updates);
+
+        cache.del('instrument');
 
         res.status(200).send({
             success: true,
@@ -352,6 +332,8 @@ export const deleteInstrument = async (req, res) => {
                 var instrumentData = await deleteData(process.env.instrumentCollection, instrumentId);
                 console.log('success');
 
+                cache.del('instrument');
+
                 return res.status(201).send({
                     success: true,
                     message: 'student deleted successfully',
@@ -359,6 +341,7 @@ export const deleteInstrument = async (req, res) => {
                 });
             }
         } else {
+            cache.del('instrument');
             return res.send({ message: "Error while finding instrument" })
         }
 

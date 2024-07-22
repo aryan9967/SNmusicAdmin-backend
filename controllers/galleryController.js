@@ -7,6 +7,7 @@ import { FieldValue } from "firebase-admin/firestore"
 import slugify from "slugify";
 import { v4 as uuidv4 } from 'uuid';
 import { uploadVideo } from "../DB/storage.js";
+import cache from "memory-cache"
 import { createData, deleteData, deleteSubFieldData, matchData, readAllData, readFieldData, readSingleData, readSubFieldData, updateData, updateSubFieldData } from "../DB/crumd.js";
 import { storage } from "../DB/firebase.js";
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
@@ -14,6 +15,8 @@ import { doc, getDoc } from "firebase/firestore";
 import { addTextWatermarkToImage, uploadFile } from "../helper/mediaHelper.js";
 
 dotenv.config()
+
+const CACHE_DURATION = 24 * 60 * 60 * 1000; //24 hours
 
 // Multer configuration for file uploads
 const upload = multer({ storage: multer.memoryStorage() });
@@ -89,6 +92,8 @@ export const addGallery = async (req, res) => {
         gallery = await updateData(process.env.galleryCollection, galleryId, { [fieldName]: galleryData })
         console.log('success');
 
+        cache.del('gallery');
+
         res.status(201).send({
             success: true,
             message: 'Gallery added successfully',
@@ -137,10 +142,13 @@ export const addGallery = async (req, res) => {
 */
 export const readAllGallery = async (req, res) => {
     try {
+        var key = "gallery"
         const galleryId = process.env.galleryId; // Get galleryId from env
         const fieldName = process.env.galleryField;
         var gallery = await readFieldData(process.env.galleryCollection, galleryId, fieldName);
         console.log('success');
+
+        cache.put(key, gallery, CACHE_DURATION)
 
         return res.status(201).send({
             success: true,
@@ -265,6 +273,8 @@ export const updateGalleryImage = async (req, res) => {
         gallery = await updateSubFieldData(process.env.galleryCollection, galleryId, fieldName, imageId, newGalleryItem)
         console.log('success');
 
+        cache.del('gallery');
+
         res.status(201).send({
             success: true,
             message: 'Gallery image updated successfully',
@@ -310,6 +320,8 @@ export const deleteGallery = async (req, res) => {
             if (validateData) {
                 var galleryData = await deleteData(process.env.galleryCollection, galleryId);
                 console.log('success');
+
+                cache.del('gallery');
 
                 return res.status(201).send({
                     success: true,
@@ -371,6 +383,8 @@ export const deleteGalleryImage = async (req, res) => {
             if (validateData) {
                 var galleryData = await deleteSubFieldData(process.env.galleryCollection, galleryId, fieldName, imageId);
                 console.log('success');
+
+                cache.del('gallery');
 
                 return res.status(201).send({
                     success: true,

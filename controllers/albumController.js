@@ -7,12 +7,15 @@ import { FieldValue } from "firebase-admin/firestore"
 import slugify from "slugify";
 import { v4 as uuidv4 } from 'uuid';
 import { uploadVideo } from "../DB/storage.js";
+import cache from "memory-cache"
 import { createData, createSubData, deleteData, deleteSubData, matchData, matchSubData, readAllData, readAllLimitData, readAllLimitSubData, readAllSubData, readSingleData, readSingleSubData, readSubFieldData, updateData, updateSubData } from "../DB/crumd.js";
 import { storage } from "../DB/firebase.js";
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { addTextWatermarkToImage, addTextWatermarkToVideo, extractFrameFromVideo, uploadFile } from "../helper/mediaHelper.js";
 
 dotenv.config()
+
+const CACHE_DURATION = 24 * 60 * 60 * 1000; //24 hours
 
 // Multer configuration for file uploads
 const upload = multer({ storage: multer.memoryStorage() });
@@ -63,6 +66,7 @@ export const createAlbumFolder = async (req, res) => {
 
     const album = await createData(process.env.albumFolderCollection, albumFolderId, albumJson)
     console.log('success');
+    cache.del('album_folder');
 
     return res.status(201).send({
       success: true,
@@ -175,6 +179,8 @@ export const createAlbumItem = async (req, res) => {
 
     await createSubData(process.env.albumFolderCollection, process.env.albumItemCollection, albumFolderId, albumItemId, albumJson);
 
+    cache.del('album_item');
+    
     res.status(201).send({
       success: true,
       message: 'Album created successfully',
@@ -213,9 +219,11 @@ export const createAlbumItem = async (req, res) => {
 
 export const readAllAlbumFolder = async (req, res) => {
   try {
+    var key = "album_folder"
     // var albumData = await readAllData(process.env.albumFolderCollection);
     var albumData = await readAllLimitData(process.env.albumFolderCollection, ["albumFolderId", "title"]);
     console.log('success');
+    cache.put(key, albumData, CACHE_DURATION)
 
     return res.status(201).send({
       success: true,
@@ -314,10 +322,13 @@ export const readSingleAlbumFolder = async (req, res) => {
 
 export const readAllAlbumItems = async (req, res) => {
   try {
+    var key = "album_item";
     const { albumFolderId } = req.body;
     // var albumData = await readAllSubData(process.env.albumFolderCollection, process.env.albumItemCollection, albumFolderId);
     var albumData = await readAllLimitSubData(process.env.albumFolderCollection, process.env.albumItemCollection, albumFolderId, ["albumFolderId", "albumItemId", "imageUrl", "title"]);
     console.log('success');
+
+    cache.put(key, albumData, CACHE_DURATION)
 
     return res.status(201).send({
       success: true,
@@ -437,6 +448,8 @@ export const updateAlbumFolder = async (req, res) => {
     var albumData = await updateData(process.env.albumFolderCollection, albumFolderId, updates);
     console.log('success');
 
+    cache.del('album_folder');
+
     return res.status(201).send({
       success: true,
       message: 'Album read successfully',
@@ -532,6 +545,8 @@ export const updateAlbumItem = async (req, res) => {
     const albumItem = await updateSubData(process.env.albumFolderCollection, process.env.albumItemCollection, albumFolderId, albumItemId, updates)
     console.log('success');
 
+    cache.del('album_item');
+
     res.status(201).send({
       success: true,
       message: 'Album Item updated successfully',
@@ -572,6 +587,8 @@ export const deleteAlbumFolder = async (req, res) => {
 
     var albumData = await deleteData(process.env.albumFolderCollection, albumFolderId);
     console.log('success');
+
+    cache.del('album_folder');
 
     return res.status(201).send({
       success: true,
@@ -614,6 +631,8 @@ export const deleteAlbumItem = async (req, res) => {
 
     var albumData = await deleteSubData(process.env.albumFolderCollection, process.env.albumItemCollection, albumFolderId, albumItemId);
     console.log('success');
+    
+    cache.del('album_item');
 
     return res.status(201).send({
       success: true,

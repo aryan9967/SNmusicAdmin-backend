@@ -3,6 +3,7 @@ import multer from 'multer';
 import { isAdmin, requireSignIn } from '../middleware/authMiddleware.js';
 import { createAlbumFolder, createAlbumItem, deleteAlbumFolder, deleteAlbumItem, readAlbumItemUrl, readAllAlbumFolder, readAllAlbumItems, readSingleAlbumFolder, readSingleAlbumItem, updateAlbumFolder, updateAlbumItem } from '../controllers/albumController.js';
 import { readSubFieldData } from '../DB/crumd.js';
+import { checkcache_for_album_folder, checkcache_for_album_item } from '../middleware/caching_middleware.js';
 // import { create } from '../DB/FCRUD.js';
 
 // Configure multer for file uploads
@@ -25,10 +26,10 @@ router.post('/create-album-folder', createAlbumFolder);
 router.post('/create-album-item', upload, createAlbumItem);
 
 //Register User || POST
-router.get('/read-all-album-folder', readAllAlbumFolder);
+router.get('/read-all-album-folder', checkcache_for_album_folder, readAllAlbumFolder);
 
 //Register User || POST
-router.post('/read-all-album-item', readAllAlbumItems);
+router.post('/read-all-album-item', checkcache_for_album_item, readAllAlbumItems);
 
 //Register Seller || POST
 router.post('/read-single-album-folder', readSingleAlbumFolder);

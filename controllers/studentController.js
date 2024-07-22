@@ -7,12 +7,15 @@ import { FieldValue } from "firebase-admin/firestore"
 import slugify from "slugify";
 import { v4 as uuidv4 } from 'uuid';
 import { uploadVideo } from "../DB/storage.js";
+import cache from "memory-cache"
 import { createData, deleteData, matchData, readAllData, readAllLimitData, readSingleData, updateData } from "../DB/crumd.js";
 import { storage } from "../DB/firebase.js";
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { addTextWatermarkToImage, addTextWatermarkToVideo, extractFrameFromVideo, uploadFile, uploadWaterMarkFile } from "../helper/mediaHelper.js";
 
 dotenv.config()
+
+const CACHE_DURATION = 24 * 60 * 60 * 1000; //24 hours
 
 // Multer configuration for file uploads
 const upload = multer({ storage: multer.memoryStorage() });
@@ -97,6 +100,8 @@ export const createStudents = async (req, res) => {
 
     await createData(process.env.ourStudentCollection, studentId, studentJson);
 
+    cache.del('our_students');
+
     res.status(201).send({
       success: true,
       message: 'Student created successfully',
@@ -140,8 +145,11 @@ export const createStudents = async (req, res) => {
 
 export const readAllStudent = async (req, res) => {
   try {
+    var key = 'our_students'
     var student = await readAllLimitData(process.env.ourStudentCollection, ['studentId', 'imageUrl', 'description', 'title']);
     console.log('success');
+
+    cache.put(key, student, CACHE_DURATION)
 
     return res.status(201).send({
       success: true,
@@ -271,6 +279,8 @@ export const updateStudent = async (req, res) => {
 
     const student = await updateData(process.env.ourStudentCollection, studentId, updates);
 
+    cache.del('our_students');
+
     res.status(201).send({
       success: true,
       message: 'Student updated successfully',
@@ -314,6 +324,8 @@ export const deleteStudent = async (req, res) => {
       if (validateData) {
         var studentData = await deleteData(process.env.ourStudentCollection, studentId);
         console.log('success');
+
+        cache.del('our_students');
 
         return res.status(201).send({
           success: true,
