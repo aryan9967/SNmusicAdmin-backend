@@ -7,7 +7,7 @@ import { FieldValue } from "firebase-admin/firestore"
 import slugify from "slugify";
 import { v4 as uuidv4 } from 'uuid';
 import { uploadVideo } from "../DB/storage.js";
-import { createData, createSubData, deleteData, deleteSubData, matchData, matchSubData, readAllData, readAllSubData, readSingleData, readSingleSubData, updateData, updateSubData } from "../DB/crumd.js";
+import { createData, createSubData, deleteData, deleteSubData, matchData, matchSubData, readAllData, readAllLimitData, readAllLimitSubData, readAllSubData, readSingleData, readSingleSubData, readSubFieldData, updateData, updateSubData } from "../DB/crumd.js";
 import { storage } from "../DB/firebase.js";
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { addTextWatermarkToImage, addTextWatermarkToVideo, extractFrameFromVideo, uploadFile } from "../helper/mediaHelper.js";
@@ -213,7 +213,8 @@ export const createAlbumItem = async (req, res) => {
 
 export const readAllAlbumFolder = async (req, res) => {
   try {
-    var albumData = await readAllData(process.env.albumFolderCollection);
+    // var albumData = await readAllData(process.env.albumFolderCollection);
+    var albumData = await readAllLimitData(process.env.albumFolderCollection, ["albumFolderId", "title"]);
     console.log('success');
 
     return res.status(201).send({
@@ -314,7 +315,8 @@ export const readSingleAlbumFolder = async (req, res) => {
 export const readAllAlbumItems = async (req, res) => {
   try {
     const { albumFolderId } = req.body;
-    var albumData = await readAllSubData(process.env.albumFolderCollection, process.env.albumItemCollection, albumFolderId);
+    // var albumData = await readAllSubData(process.env.albumFolderCollection, process.env.albumItemCollection, albumFolderId);
+    var albumData = await readAllLimitSubData(process.env.albumFolderCollection, process.env.albumItemCollection, albumFolderId, ["albumFolderId", "albumItemId", "imageUrl", "title"]);
     console.log('success');
 
     return res.status(201).send({
@@ -361,6 +363,27 @@ export const readSingleAlbumItem = async (req, res) => {
   try {
     const { albumFolderId, albumItemId } = req.body;
     var albumData = await readSingleSubData(process.env.albumFolderCollection, process.env.albumItemCollection, albumFolderId, albumItemId);
+    console.log('success');
+
+    return res.status(201).send({
+      success: true,
+      message: 'Album read successfully',
+      albumItem: albumData
+    });
+  } catch (error) {
+    console.error('Error in album creation:', error);
+    return res.status(500).send({
+      success: false,
+      message: 'Error in album creation',
+      error: error.message,
+    });
+  }
+};
+
+export const readAlbumItemUrl = async (req, res) => {
+  try {
+    const { albumFolderId, albumItemId } = req.body;
+    var albumData = await readSubFieldData(process.env.albumFolderCollection, process.env.albumItemCollection, albumFolderId, albumItemId, "mediaUrl");
     console.log('success');
 
     return res.status(201).send({
