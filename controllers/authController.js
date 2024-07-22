@@ -25,7 +25,7 @@ const bucket = admin.storage().bucket()
 //not applicable
 export const adminRegisterController = async (req, res) => {
   try {
-    const { name, address, contact, email, instagram, facebook, twitter } = req.body;
+    const { name, address, contact, email, instagram, facebook, whatsapp } = req.body;
     const adminId = uuidv4();
     if (!name) {
       return res.send({ message: 'Name is required' });
@@ -45,8 +45,8 @@ export const adminRegisterController = async (req, res) => {
     if (!facebook) {
       return res.send({ message: 'Facebook is required' });
     }
-    if (!twitter) {
-      return res.send({ message: 'Twitter is required' });
+    if (!whatsapp) {
+      return res.send({ message: 'whatsapp is required' });
     }
 
     //existing user
@@ -66,7 +66,7 @@ export const adminRegisterController = async (req, res) => {
       email: email,
       instagram: instagram,
       facebook: facebook,
-      twitter: twitter,
+      whatsapp: whatsapp,
       photoUrl: '',
       role: 2,
     };
@@ -150,7 +150,7 @@ export const adminLoginController = async (req, res) => {
         email: adminData?.email,
         instagram: adminData?.instagram,
         facebook: adminData?.facebook,
-        twitter: adminData?.twitter,
+        whatsapp: adminData?.whatsapp,
         photoUrl: adminData?.photoUrl,
         role: adminData?.role,
       },
@@ -170,9 +170,10 @@ export const adminLoginController = async (req, res) => {
 // Update admin details including image
 export const adminUpdateController = async (req, res) => {
   try {
-    const { adminId, name, address, contact, email, instagram, facebook, twitter, role } = req.body;
-    const file = req.file; // Assuming file is an image file
-    let downloadURL;
+    console.log(req.body)
+    const { adminId, name, address, contact, email, instagram, facebook, whatsapp, role } = req.body;
+    // const file = req.file; // Assuming file is an image file
+    // let downloadURL;
 
     // Create the updates object only with provided fields
     const updates = {};
@@ -182,60 +183,60 @@ export const adminUpdateController = async (req, res) => {
     if (email) updates.email = email;
     if (instagram) updates.instagram = instagram;
     if (facebook) updates.facebook = facebook;
-    if (twitter) updates.twitter = twitter;
+    if (whatsapp) updates.whatsapp = whatsapp;
     if (role) updates.role = role;
 
     if (!adminId) {
       return res.status(400).send({ message: 'Error finding admin' });
     }
 
-    if (!name && !address && !contact && !email && !instagram && !facebook && !twitter && !role && !file) {
+    if (!name && !address && !contact && !email && !instagram && !facebook && !whatsapp && !role && !file) {
       return res.status(400).send({ message: 'At least one field (name, address, contact, email, social media, role) or image is required' });
     }
 
     const adminData = await readSingleData(process.env.adminCollection, adminId);
 
-    if (!adminData.exists) {
+    if (!adminData) {
       return res.status(404).send({ message: 'Admin not found' });
     }
 
-    if (file) {
-      const storageRef = ref(storage, `${process.env.storagePath}/admins/${adminId}/${file.originalname}`);
-      const metadata = {
-        contentType: file.mimetype,
-      };
+    // if (file) {
+    //   const storageRef = ref(storage, `${process.env.storagePath}/admins/${adminId}/${file.originalname}`);
+    //   const metadata = {
+    //     contentType: file.mimetype,
+    //   };
 
-      // Wrap the upload task in a Promise
-      const uploadPromise = new Promise((resolve, reject) => {
-        const uploadTask = uploadBytesResumable(storageRef, file.buffer, metadata);
+    //   // Wrap the upload task in a Promise
+    //   const uploadPromise = new Promise((resolve, reject) => {
+    //     const uploadTask = uploadBytesResumable(storageRef, file.buffer, metadata);
 
-        uploadTask.on(
-          'state_changed',
-          (snapshot) => {
-            console.log('Upload state:', snapshot.state);
-            console.log('Bytes transferred:', snapshot.bytesTransferred);
-            console.log('Total bytes:', snapshot.totalBytes);
-          },
-          (error) => {
-            console.error('Upload error:', error);
-            reject({ message: 'Upload error', error: error.message });
-          },
-          async () => {
-            try {
-              downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-              if (downloadURL) updates.photoUrl = downloadURL; // Assuming photoUrl field in admin data
-              resolve();
-            } catch (error) {
-              console.error('Error getting download URL:', error);
-              reject({ message: 'Error getting download URL', error: error.message });
-            }
-          }
-        );
-      });
+    //     uploadTask.on(
+    //       'state_changed',
+    //       (snapshot) => {
+    //         console.log('Upload state:', snapshot.state);
+    //         console.log('Bytes transferred:', snapshot.bytesTransferred);
+    //         console.log('Total bytes:', snapshot.totalBytes);
+    //       },
+    //       (error) => {
+    //         console.error('Upload error:', error);
+    //         reject({ message: 'Upload error', error: error.message });
+    //       },
+    //       async () => {
+    //         try {
+    //           downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+    //           if (downloadURL) updates.photoUrl = downloadURL; // Assuming photoUrl field in admin data
+    //           resolve();
+    //         } catch (error) {
+    //           console.error('Error getting download URL:', error);
+    //           reject({ message: 'Error getting download URL', error: error.message });
+    //         }
+    //       }
+    //     );
+    //   });
 
-      // Await the upload promise
-      await uploadPromise;
-    }
+    //   // Await the upload promise
+    //   await uploadPromise;
+    // }
 
     // Update admin data in Firestore
     await updateData(process.env.adminCollection, adminId, updates);
@@ -244,7 +245,7 @@ export const adminUpdateController = async (req, res) => {
     res.status(200).send({
       success: true,
       message: 'Admin updated successfully',
-      admin: updates, // Return updated fields
+      admin : {...updates, adminId : adminData.adminId}, // Return updated fields
     });
   } catch (error) {
     console.error('Error updating admin:', error);

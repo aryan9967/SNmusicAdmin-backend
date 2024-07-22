@@ -21,7 +21,7 @@ const bucket = admin.storage().bucket()
 
 //function to create Wind Instruments details
 /* 
-    request url = http://localhost:8080/api/v1/instrument/create-intrument
+    request url = http://localhost:8080/api/v1/instrument/create-instrument
     method = POST
     FormData: 
     fields: {

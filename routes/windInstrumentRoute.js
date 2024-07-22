@@ -6,7 +6,7 @@ import { createInstrument, deleteInstrument, readAllInstrument, readSingleInstru
 // Configure multer for file uploads
 const upload = multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB file size limit
+    // limits: { fileSize: 10 * 1024 * 1024 }, // 10MB file size limit
   }).fields([
     { name: 'image', maxCount: 1 },
     { name: 'video', maxCount: 1 },
