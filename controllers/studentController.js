@@ -7,7 +7,7 @@ import { FieldValue } from "firebase-admin/firestore"
 import slugify from "slugify";
 import { v4 as uuidv4 } from 'uuid';
 import { uploadVideo } from "../DB/storage.js";
-import { createData, deleteData, matchData, readAllData, readSingleData, updateData } from "../DB/crumd.js";
+import { createData, deleteData, matchData, readAllData, readAllLimitData, readSingleData, updateData } from "../DB/crumd.js";
 import { storage } from "../DB/firebase.js";
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { addTextWatermarkToImage, addTextWatermarkToVideo, extractFrameFromVideo, uploadFile, uploadWaterMarkFile } from "../helper/mediaHelper.js";
@@ -140,7 +140,7 @@ export const createStudents = async (req, res) => {
 
 export const readAllStudent = async (req, res) => {
   try {
-    var student = await readAllData(process.env.ourStudentCollection);
+    var student = await readAllLimitData(process.env.ourStudentCollection, ['studentId', 'imageUrl', 'description', 'title']);
     console.log('success');
 
     return res.status(201).send({
