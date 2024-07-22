@@ -254,8 +254,8 @@ export const addTextWatermarkToVideo = async (fileBuffer, text) => {
         options: {
           text: text,
           fontfile: fontPath,
-          fontcolor: 'white',
-          fontsize: 24,
+          fontcolor: 'silver',
+          fontsize: 28,
           x: '(w-text_w-10)',  // 10 pixels from the right
           y: '(h-text_h-10)',
         }

@@ -8,7 +8,7 @@ import slugify from "slugify";
 import { v4 as uuidv4 } from 'uuid';
 import { uploadVideo } from "../DB/storage.js";
 import cache from "memory-cache"
-import { createData, deleteData, matchData, readAllData, readAllLimitData, readSingleData, updateData } from "../DB/crumd.js";
+import { createData, deleteData, matchData, readAllData, readAllLimitData, readFieldData, readSingleData, updateData } from "../DB/crumd.js";
 import { storage } from "../DB/firebase.js";
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { addTextWatermarkToImage, addTextWatermarkToVideo, extractFrameFromVideo, uploadFile, uploadWaterMarkFile } from "../helper/mediaHelper.js";
@@ -196,6 +196,28 @@ export const readAllEvent = async (req, res) => {
       }
     }
 */
+
+export const readEventVideo = async (req, res) => {
+  try {
+    const { eventId } = req.body;
+    // var event = await readAllData(process.env.eventsCollection);
+    var event = await readFieldData(process.env.eventsCollection, eventId, 'videoUrl');
+
+    return res.status(201).send({
+      success: true,
+      message: 'event video read successfully',
+      event: event
+    });
+  } catch (error) {
+    console.error('Error in reading all event:', error);
+    return res.status(500).send({
+      success: false,
+      message: 'Error in reading all event',
+      error: error.message,
+    });
+  }
+};
+
 export const readSingleEvent = async (req, res) => {
   try {
     const { eventId } = req.body;
