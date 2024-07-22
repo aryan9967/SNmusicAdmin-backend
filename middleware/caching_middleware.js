@@ -51,6 +51,20 @@ function checkcache_for_bestseller(req, res, next){
     }
 }
 
+function checkcache_for_events(req, res, next){
+    const key = "all_events"
+    const cacheddata = cache.get(key)
+    if(cacheddata){
+        console.log("events is present in cache")
+        res.status(200).send(cacheddata)
+    }
+    else{
+        console.log("events is not present in cache")
+        next()
+    }
+}
+
+
 function checkcache_for_toprated(req, res, next){
     const key = "toprated"
     const cacheddata = cache.get(key)
@@ -63,4 +77,4 @@ function checkcache_for_toprated(req, res, next){
         next()
     }
 }
-export {checkcache_allproduct, checkcache_for_product, checkcache_for_bestseller, checkcache_for_toprated}
+export {checkcache_allproduct, checkcache_for_product, checkcache_for_bestseller, checkcache_for_toprated, checkcache_for_events}

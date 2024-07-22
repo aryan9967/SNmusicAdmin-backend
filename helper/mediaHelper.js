@@ -18,6 +18,7 @@ import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { createCanvas, loadImage } from 'canvas';
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
+import { writeFileSync } from 'fs';
 
 dotenv.config();
 
@@ -99,34 +100,90 @@ export const uploadWaterMarkFile = (buffer, type, folderPath) => {
 };
 
 
-export const extractFrameFromVideo = (videoBuffer) => {
-  return new Promise((resolve, reject) => {
-    // Write the video buffer to a temporary file
-    const tmpDir = os.tmpdir();
-    const tmpVideoPath = path.join(tmpDir, 'tmp-video.mp4');
-    fs.writeFileSync(tmpVideoPath, videoBuffer);
+// export const extractFrameFromVideo = async (videoBuffer) => {
+//   return await new Promise(async (resolve, reject) => {
+//     // Write the video buffer to a temporary file
+//     const tmpDir = os.tmpdir();
+//     const tmpVideoPath = path.join(tmpDir, 'tmp-video.mp4');
+//     await fs.writeFile(tmpVideoPath, videoBuffer);
 
-    const framePath = path.join(tmpDir, 'frame.jpg');
-    ffmpeg(tmpVideoPath)
-      .on('end', () => {
-        // Read the frame back into a buffer
-        fs.readFile(framePath, (err, data) => {
-          if (err) {
-            return reject(err);
+//     const framePath = path.join(tmpDir, 'frame.jpg');
+//     ffmpeg(tmpVideoPath)
+//       .on('end', () => {
+//         // Read the frame back into a buffer
+//         fs.readFile(framePath, (err, data) => {
+//           if (err) {
+//             return reject(err);
+//           }
+//           resolve(data);
+//         });
+//       })
+//       .on('error', (err) => {
+//         reject(err);
+//       })
+//       .screenshots({
+//         count: 1,
+//         timemarks: ['0.5'], // Capture at the 0.5-second mark
+//         filename: 'frame.jpg',
+//         folder: tmpDir,
+//       });
+//   });
+// };
+
+export const extractFrameFromVideo = async (videoBuffer) => {
+  const tmpDir = os.tmpdir();
+  const tmpVideoPath = path.join(tmpDir, `tmp-video-${Date.now()}.mp4`);
+  const framePath = path.join(tmpDir, `frame-${Date.now()}.jpg`);
+
+  try {
+    // Write the video buffer to a temporary file
+    await fs.writeFile(tmpVideoPath, videoBuffer);
+    console.log(`Temporary video file created at: ${tmpVideoPath}`);
+
+    return new Promise((resolve, reject) => {
+      ffmpeg(tmpVideoPath)
+        .on('start', (commandLine) => {
+          console.log('FFmpeg process started with command:', commandLine);
+        })
+        .on('end', async () => {
+          console.log('FFmpeg process finished.');
+          try {
+            // Read the frame back into a buffer
+            const data = await fs.readFile(framePath);
+            console.log(`Frame extracted to: ${framePath}`);
+            resolve(data);
+          } catch (err) {
+            console.error('Error reading frame file:', err);
+            reject(new Error('Failed to read frame file.'));
+          } finally {
+            // Clean up temporary files
+            await fs.unlink(tmpVideoPath).catch((unlinkErr) => {
+              console.error('Error deleting temporary video file:', unlinkErr);
+            });
+            await fs.unlink(framePath).catch((unlinkErr) => {
+              console.error('Error deleting frame file:', unlinkErr);
+            });
           }
-          resolve(data);
+        })
+        .on('error', async (err) => {
+          console.error('FFmpeg error:', err);
+          reject(new Error('An error occurred during frame extraction.'));
+          // Clean up temporary files
+          await fs.unlink(tmpVideoPath).catch((unlinkErr) => {
+            console.error('Error deleting temporary video file:', unlinkErr);
+          });
+        })
+        .screenshots({
+          count: 1,
+          timemarks: ['0.5'], // Capture at the 0.5-second mark
+          filename: path.basename(framePath),
+          folder: tmpDir,
         });
-      })
-      .on('error', (err) => {
-        reject(err);
-      })
-      .screenshots({
-        count: 1,
-        timemarks: ['0.5'], // Capture at the 0.5-second mark
-        filename: 'frame.jpg',
-        folder: tmpDir,
-      });
-  });
+    });
+  } catch (err) {
+    console.error('Error writing temporary video file:', err);
+    throw new Error('Failed to write temporary video file.');
+  }
 };
 
 export const addImageWatermark = async (imageBuffer) => {
@@ -141,11 +198,23 @@ export const addImageWatermark = async (imageBuffer) => {
 };
 
 export const addTextWatermarkToImage = async (imageBuffer, text) => {
-  const image = await sharp(imageBuffer).resize({ width: 800 }).toBuffer();
-  const canvas = createCanvas(800, 600);
+  // Load the image using sharp to get its dimensions
+  const image = sharp(imageBuffer);
+  const metadata = await image.metadata();
+
+  // Resize the image while maintaining its aspect ratio
+  const resizedImage = await image.resize(800).toBuffer();
+  const resizedMetadata = await sharp(resizedImage).metadata();
+
+  const canvasWidth = resizedMetadata.width;
+  const canvasHeight = resizedMetadata.height;
+
+  // Create a canvas with the resized image dimensions
+  const canvas = createCanvas(canvasWidth, canvasHeight);
   const ctx = canvas.getContext('2d');
 
-  const img = await loadImage(image);
+  // Load the resized image into the canvas
+  const img = await loadImage(resizedImage);
   ctx.drawImage(img, 0, 0);
 
   // Set the font and style for the watermark text
@@ -155,12 +224,13 @@ export const addTextWatermarkToImage = async (imageBuffer, text) => {
   // Calculate the position for the watermark text at the bottom right
   const textWidth = ctx.measureText(text).width;
   const textHeight = 48; // This can be adjusted based on the font size
-  const xPosition = canvas.width - textWidth - 20; // 20 pixels padding from the right edge
-  const yPosition = canvas.height - textHeight + 20; // 20 pixels padding from the bottom edge
+  const xPosition = canvasWidth - textWidth - 20; // 20 pixels padding from the right edge
+  const yPosition = canvasHeight - textHeight + 20; // 20 pixels padding from the bottom edge
 
   ctx.fillText(text, xPosition, yPosition);
 
-  const watermarkedBuffer = canvas.toBuffer('image/jpeg');
+  // Convert the canvas back to a buffer
+  const watermarkedBuffer = canvas.toBuffer('image/png');
   return watermarkedBuffer;
 };
 

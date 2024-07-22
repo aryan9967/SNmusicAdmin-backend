@@ -2,6 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import { isAdmin, requireSignIn } from '../middleware/authMiddleware.js';
 import { createEvent, deleteEvent, readAllEvent, readSingleEvent, updateEvent } from '../controllers/eventController.js';
+import { checkcache_for_events } from '../middleware/caching_middleware.js';
 
 // Configure multer for file uploads
 const upload = multer({
@@ -21,7 +22,7 @@ const router = express.Router();
 router.post('/create-event', upload, createEvent);
 
 //Verify Phone Number || POST
-router.get('/read-all-event', readAllEvent);
+router.get('/read-all-event', checkcache_for_events, readAllEvent);
 
 //Verify Phone Number || POST
 router.post('/read-event', readSingleEvent);

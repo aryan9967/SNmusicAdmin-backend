@@ -7,12 +7,15 @@ import { FieldValue } from "firebase-admin/firestore"
 import slugify from "slugify";
 import { v4 as uuidv4 } from 'uuid';
 import { uploadVideo } from "../DB/storage.js";
-import { createData, deleteData, matchData, readAllData, readSingleData, updateData } from "../DB/crumd.js";
+import cache from "memory-cache"
+import { createData, deleteData, matchData, readAllData, readAllLimitData, readSingleData, updateData } from "../DB/crumd.js";
 import { storage } from "../DB/firebase.js";
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { addTextWatermarkToImage, addTextWatermarkToVideo, extractFrameFromVideo, uploadFile, uploadWaterMarkFile } from "../helper/mediaHelper.js";
 
 dotenv.config()
+
+const CACHE_DURATION = 10 * 60 * 1000 //10 minutes
 
 // Multer configuration for file uploads
 const upload = multer({ storage: multer.memoryStorage() });
@@ -62,14 +65,16 @@ export const createEvent = async (req, res) => {
 
     let imageUrl = null;
     let videoUrl = null;
+    var vidWatermark, vidWatermarkUrl, imgWatermarkUrl;
 
     if (files.video && files.video.length > 0) {
       const videoFile = files.video[0];
-      videoUrl = await uploadFile(videoFile, 'videos', `event/${eventId}/video/${videoFile.originalname}`);
-
+      vidWatermark = await addTextWatermarkToVideo(videoFile.buffer, 'SN MUSIC')
+      vidWatermarkUrl = await uploadWaterMarkFile(vidWatermark, 'videos', `event/${eventId}/watermark/${videoFile.originalname}`);
       if (files.image && files.image.length > 0) {
         const imageFile = files.image[0];
-        imageUrl = await uploadFile(imageFile, 'images', `event/${eventId}/image/${imageFile.originalname}`);
+        const watermarkedFrameBuffer = await addTextWatermarkToImage(imageFile.buffer, 'SN MUSIC');
+        imgWatermarkUrl = await uploadFile(watermarkedFrameBuffer, 'images', `event/${eventId}/image/${watermarkedFrameBuffer.originalname}`);
       } else {
         const frameBuffer = await extractFrameFromVideo(videoFile.buffer);
         const frameFile = {
@@ -77,7 +82,8 @@ export const createEvent = async (req, res) => {
           mimetype: 'image/jpeg',
           buffer: frameBuffer,
         };
-        imageUrl = await uploadFile(frameFile, 'images', `event/${eventId}/image/${frameFile.originalname}`);
+        const watermarkedFrameBuffer = await addTextWatermarkToImage(frameFile.buffer, 'SN MUSIC');
+        imgWatermarkUrl = await uploadFile(watermarkedFrameBuffer, 'images', `event/${eventId}/image/${watermarkedFrameBuffer.originalname}`);
       }
     } else {
       throw new Error('Video file is required.');
@@ -87,8 +93,8 @@ export const createEvent = async (req, res) => {
       eventId: eventId,
       title: title,
       description: description,
-      videoUrl: videoUrl,
-      imageUrl: imageUrl,
+      videoUrl: vidWatermarkUrl,
+      imageUrl: imgWatermarkUrl,
       timestamp: new Date(),
     };
 
@@ -145,8 +151,12 @@ export const createEvent = async (req, res) => {
 
 export const readAllEvent = async (req, res) => {
   try {
-    var event = await readAllData(process.env.eventsCollection);
-    console.log('success');
+    var key = 'all_events'
+    // var event = await readAllData(process.env.eventsCollection);
+    var event = await readAllLimitData(process.env.eventsCollection, ['eventId', 'imageUrl', 'description', 'title']);
+
+    console.log("setting data in cache")
+    cache.put(key, event, CACHE_DURATION)
 
     return res.status(201).send({
       success: true,
@@ -271,7 +281,7 @@ export const updateEvent = async (req, res) => {
       // videoUrl = await uploadFile(videoFile, 'videos', `event/${eventId}/video/${videoFile.originalname}`);
       vidWatermark = await addTextWatermarkToVideo(videoFile.buffer, 'SN MUSIC')
       vidWatermarkUrl = await uploadWaterMarkFile(vidWatermark, 'videos', `event/${eventId}/watermark/${videoFile.originalname}`);
-      updates.videoUrl = videoUrl;
+      updates.videoUrl = vidWatermarkUrl;
     }
 
     if (files.image && files.image.length > 0) {
@@ -289,8 +299,6 @@ export const updateEvent = async (req, res) => {
       success: true,
       message: 'Event updated successfully',
       event: updates,
-      watermarkUrl,
-      vidWatermarkUrl,
     });
   } catch (error) {
     console.error('Error in updating event:', error);

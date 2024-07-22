@@ -73,19 +73,26 @@ export const readAllData = async (collectionName) => {
   }
 };
 
-export const readAllLimitData = async (collectionName) => {
+export const readAllLimitData = async (collectionName, fields) => {
   try {
-    //Retrieve user data
-    const querySnapshot = await db
-      .collection(collectionName)
-      .get();
+    let query = db.collection(collectionName).limit(100); // Adjust the limit according to your needs
+    
+    // Apply the select if fields are provided
+    if (fields && fields.length > 0) {
+      query = query.select(...fields);
+    }
+    
+    const querySnapshot = await query.get();
+
     let queryData = [];
     querySnapshot.forEach((doc) => {
       queryData.push(doc.data());
     });
+
     return queryData;
   } catch (error) {
-    console.log(error);
+    console.error("Error retrieving data:", error);
+    throw error; // Re-throw the error after logging it
   }
 };
 

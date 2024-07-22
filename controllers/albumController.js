@@ -10,7 +10,7 @@ import { uploadVideo } from "../DB/storage.js";
 import { createData, createSubData, deleteData, deleteSubData, matchData, matchSubData, readAllData, readAllSubData, readSingleData, readSingleSubData, updateData, updateSubData } from "../DB/crumd.js";
 import { storage } from "../DB/firebase.js";
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { extractFrameFromVideo, uploadFile } from "../helper/mediaHelper.js";
+import { addTextWatermarkToImage, addTextWatermarkToVideo, extractFrameFromVideo, uploadFile } from "../helper/mediaHelper.js";
 
 dotenv.config()
 
@@ -130,24 +130,38 @@ export const createAlbumItem = async (req, res) => {
 
     let imageUrl = null;
     let mediaUrl = null;
-    var mediaFile;
+    var mediaFile, mediaType;
 
     if (files.media && files.media.length > 0) {
       mediaFile = files.media[0];
       console.log(mediaFile);
-      mediaUrl = await uploadFile(mediaFile, 'videos', mediaFile.originalname, `albums/${albumFolderId}/${albumItemId}/media/${mediaFile.originalname}`);
+      mediaType = mediaFile.mimetype.split('/')[0];
+      if (mediaType === "video") {
+        const watermarkedFrameBuffer = await addTextWatermarkToVideo(mediaFile.buffer, 'SN MUSIC');
+        mediaUrl = await uploadFile(watermarkedFrameBuffer, 'videos', `albums/${albumFolderId}/${albumItemId}/media/${mediaFile.originalname}`);
+      } else if (mediaType === 'image') {
+        const watermarkedFrameBuffer = await addTextWatermarkToImage(mediaFile.buffer, 'SN MUSIC');
+        mediaUrl = await uploadFile(watermarkedFrameBuffer, 'images', `albums/${albumFolderId}/${albumItemId}/media/${mediaFile.originalname}`);
+      }
     }
+
     if (files.image && files.image.length > 0) {
       const imageFile = files.image[0];
-      imageUrl = await uploadFile(imageFile, 'images', `albums/${albumFolderId}/${albumItemId}/image/${mediaFile.originalname}`);
+      const watermarkedFrameBuffer = await addTextWatermarkToImage(imageFile.buffer, 'SN MUSIC');
+      imageUrl = await uploadFile(watermarkedFrameBuffer, 'images', `albums/${albumFolderId}/${albumItemId}/image/${mediaFile.originalname}`);
     } else {
-      const frameBuffer = await extractFrameFromVideo(mediaFile.buffer);
-      const frameFile = {
-        originalname: 'frame.jpg',
-        mimetype: 'image/jpeg',
-        buffer: frameBuffer,
-      };
-      imageUrl = await uploadFile(frameFile, 'images', `albums/${albumFolderId}/${albumItemId}/image/${frameFile.originalname}`);
+      if (mediaType === "image") {
+        imageUrl = mediaUrl;
+      } else if (mediaType === "video") {
+        const frameBuffer = await extractFrameFromVideo(mediaFile.buffer);
+        const frameFile = {
+          originalname: 'frame.jpg',
+          mimetype: 'image/png',
+          buffer: frameBuffer,
+        };
+        const watermarkedFrameBuffer = await addTextWatermarkToImage(frameFile.buffer, 'SN MUSIC');
+        imageUrl = await uploadFile(watermarkedFrameBuffer, 'images', `albums/${albumFolderId}/${albumItemId}/image/${mediaFile.originalname}`);
+      }
     }
 
     const albumJson = {
@@ -472,15 +486,23 @@ export const updateAlbumItem = async (req, res) => {
 
     if (files.media && files.media.length > 0) {
       mediaFile = files.media[0];
-      const mediaPath = `albums/${albumFolderId}/${albumItemId}/media/${mediaFile.originalname}`;
-      mediaUrl = await uploadFile(mediaFile, 'videos', mediaPath);
-      updates.mediaUrl = mediaUrl;
+      console.log(mediaFile);
+      mediaType = mediaFile.mimetype.split('/')[0];
+      if (mediaType === "video") {
+        const watermarkedFrameBuffer = await addTextWatermarkToVideo(mediaFile.buffer, 'SN MUSIC');
+        mediaUrl = await uploadFile(watermarkedFrameBuffer, 'videos', `albums/${albumFolderId}/${albumItemId}/media/${mediaFile.originalname}`);
+        updates.mediaUrl = mediaUrl;
+      } else if (mediaType === 'image') {
+        const watermarkedFrameBuffer = await addTextWatermarkToImage(mediaFile.buffer, 'SN MUSIC');
+        mediaUrl = await uploadFile(watermarkedFrameBuffer, 'images', `albums/${albumFolderId}/${albumItemId}/media/${mediaFile.originalname}`);
+        updates.mediaUrl = mediaUrl;
+      }
     }
 
     if (files.image && files.image.length > 0) {
       const imageFile = files.image[0];
-      const imagePath = `albums/${albumFolderId}/${albumItemId}/image/${imageFile.originalname}`;
-      imageUrl = await uploadFile(imageFile, 'images', imagePath);
+      const watermarkedFrameBuffer = await addTextWatermarkToImage(imageFile.buffer, 'SN MUSIC');
+      imageUrl = await uploadFile(watermarkedFrameBuffer, 'images', `albums/${albumFolderId}/${albumItemId}/image/${mediaFile.originalname}`);
       updates.imageUrl = imageUrl;
     }
 
