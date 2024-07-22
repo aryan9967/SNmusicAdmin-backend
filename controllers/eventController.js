@@ -273,7 +273,7 @@ export const updateEvent = async (req, res) => {
 
     let imageUrl = null;
     let videoUrl = null;
-    var watermarkUrl, vidWatermarkUrl, vidWatermark;
+    var imgWatermarkUrl, vidWatermarkUrl, vidWatermark;
 
     if (files.video && files.video.length > 0) {
       const videoFile = files.video[0];
@@ -288,8 +288,8 @@ export const updateEvent = async (req, res) => {
       const imageFile = files.image[0];
       console.log(imageFile);
       const watermarkedFrameBuffer = await addTextWatermarkToImage(imageFile.buffer, 'SN MUSIC');
-      watermarkUrl = await uploadFile(watermarkedFrameBuffer, 'images', `event/${eventId}/image/${watermarkedFrameBuffer.originalname}`);
-      updates.imageUrl = watermarkUrl;
+      imgWatermarkUrl = await uploadFile(watermarkedFrameBuffer, 'images', `event/${eventId}/image/${watermarkedFrameBuffer.originalname}`);
+      updates.imageUrl = imgWatermarkUrl;
     }
 
     const student = await updateData(process.env.eventsCollection, eventId, updates)

@@ -10,6 +10,7 @@ import { uploadVideo } from "../DB/storage.js";
 import { createData, deleteData, matchData, readAllData, readSingleData, updateData } from "../DB/crumd.js";
 import { storage } from "../DB/firebase.js";
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { addTextWatermarkToImage, addTextWatermarkToVideo, uploadFile, uploadWaterMarkFile } from "../helper/mediaHelper.js";
 
 dotenv.config()
 
@@ -66,47 +67,25 @@ export const createInstrument = async (req, res) => {
         // const isImage = ['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension);
         // const isVideo = ['mp4', 'avi', 'mkv', 'mov'].includes(fileExtension);
 
-        const uploadFile = (file, type) => {
-            return new Promise((resolve, reject) => {
-                const storageRef = ref(storage, `${process.env.storagePath}/instruments/${instrumentId}/${type}/${file.originalname}`);
-                const metadata = { contentType: file.mimetype };
-                const uploadTask = uploadBytesResumable(storageRef, file.buffer, metadata);
+        var imgWatermarkUrl, vidWatermarkUrl, vidWatermark;
 
-                uploadTask.on(
-                    'state_changed',
-                    (snapshot) => {
-                        console.log('Upload state:', snapshot.state);
-                        console.log('Bytes transferred:', snapshot.bytesTransferred);
-                        console.log('Total bytes:', snapshot.totalBytes);
-                    },
-                    (error) => {
-                        console.error('Upload error:', error);
-                        reject({ message: 'Upload error', error: error.message });
-                    },
-                    async () => {
-                        try {
-                            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                            resolve(downloadURL);
-                        } catch (error) {
-                            console.error('Error getting download URL:', error);
-                            reject({ message: 'Error getting download URL', error: error.message });
-                        }
-                    }
-                );
-            });
-        };
+        if (files.video && files.video.length > 0) {
+            const videoFile = files.video[0];
+            vidWatermark = await addTextWatermarkToVideo(videoFile.buffer, 'SN MUSIC')
+            vidWatermarkUrl = await uploadWaterMarkFile(vidWatermark, 'videos', `instrument/${instrumentId}/watermark/${videoFile.originalname}`);
+        }
 
-        // Upload image and video
-        const imageUploadPromise = uploadFile(files.image[0], 'images');
-        const videoUploadPromise = uploadFile(files.video[0], 'videos');
-
-        const [imageUrl, videoUrl] = await Promise.all([imageUploadPromise, videoUploadPromise]);
+        if (files.image && files.image.length > 0) {
+            const imageFile = files.image[0];
+            const watermarkedFrameBuffer = await addTextWatermarkToImage(imageFile.buffer, 'SN MUSIC');
+            imgWatermarkUrl = await uploadFile(watermarkedFrameBuffer, 'images', `instrument/${instrumentId}/image/${watermarkedFrameBuffer.originalname}`);
+        }
 
         const instrumentJson = {
             instrumentId: instrumentId,
             title: title,
-            imageUrl: imageUrl,
-            videoUrl: videoUrl,
+            imageUrl: imgWatermarkUrl,
+            videoUrl: vidWatermarkUrl,
             timestamp: new Date(),
         };
 
@@ -305,21 +284,24 @@ export const readSingleInstrument = async (req, res) => {
             });
         };
 
-        const uploadPromises = [];
-        if (files?.image) {
-            uploadPromises.push(uploadFile(files.image[0], 'images').then((url) => {
-                updates.imageUrl = url;
-                imageUrl = url;
-            }));
-        }
-        if (files?.video) {
-            uploadPromises.push(uploadFile(files.video[0], 'videos').then((url) => {
-                updates.videoUrl = url;
-                videoUrl = url;
-            }));
+        var imgWatermarkUrl, vidWatermarkUrl, vidWatermark;
+
+        if (files.video && files.video.length > 0) {
+            const videoFile = files.video[0];
+            console.log(videoFile);
+            // videoUrl = await uploadFile(videoFile, 'videos', `event/${eventId}/video/${videoFile.originalname}`);
+            vidWatermark = await addTextWatermarkToVideo(videoFile.buffer, 'SN MUSIC')
+            vidWatermarkUrl = await uploadWaterMarkFile(vidWatermark, 'videos', `instrument/${instrumentId}/watermark/${videoFile.originalname}`);
+            updates.videoUrl = vidWatermarkUrl;
         }
 
-        await Promise.all(uploadPromises);
+        if (files.image && files.image.length > 0) {
+            const imageFile = files.image[0];
+            console.log(imageFile);
+            const watermarkedFrameBuffer = await addTextWatermarkToImage(imageFile.buffer, 'SN MUSIC');
+            imgWatermarkUrl = await uploadFile(watermarkedFrameBuffer, 'images', `instrument/${instrumentId}/image/${watermarkedFrameBuffer.originalname}`);
+            updates.imageUrl = imgWatermarkUrl;
+        }
 
         await updateData(process.env.instrumentCollection, instrumentId, updates);
 

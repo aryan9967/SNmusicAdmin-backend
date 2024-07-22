@@ -10,7 +10,7 @@ import { uploadVideo } from "../DB/storage.js";
 import { createData, deleteData, matchData, readAllData, readSingleData, updateData } from "../DB/crumd.js";
 import { storage } from "../DB/firebase.js";
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { extractFrameFromVideo, uploadFile } from "../helper/mediaHelper.js";
+import { addTextWatermarkToImage, addTextWatermarkToVideo, extractFrameFromVideo, uploadFile, uploadWaterMarkFile } from "../helper/mediaHelper.js";
 
 dotenv.config()
 
@@ -62,14 +62,16 @@ export const createStudents = async (req, res) => {
 
     let imageUrl = null;
     let videoUrl = null;
+    var vidWatermark, vidWatermarkUrl, imgWatermarkUrl;
 
     if (files.video && files.video.length > 0) {
       const videoFile = files.video[0];
-      videoUrl = await uploadFile(videoFile, 'videos', `student/${studentId}/video/${videoFile.originalname}`);
-
+      vidWatermark = await addTextWatermarkToVideo(videoFile.buffer, 'SN MUSIC')
+      vidWatermarkUrl = await uploadWaterMarkFile(vidWatermark, 'videos', `student/${studentId}/watermark/${videoFile.originalname}`);
       if (files.image && files.image.length > 0) {
         const imageFile = files.image[0];
-        imageUrl = await uploadFile(imageFile, 'images', `student/${studentId}/image/${imageFile.originalname}`);
+        const watermarkedFrameBuffer = await addTextWatermarkToImage(imageFile.buffer, 'SN MUSIC');
+        imgWatermarkUrl = await uploadFile(watermarkedFrameBuffer, 'images', `student/${eventId}/image/${watermarkedFrameBuffer.originalname}`);
       } else {
         const frameBuffer = await extractFrameFromVideo(videoFile.buffer);
         const frameFile = {
@@ -77,7 +79,8 @@ export const createStudents = async (req, res) => {
           mimetype: 'image/jpeg',
           buffer: frameBuffer,
         };
-        imageUrl = await uploadFile(frameFile, 'images', `student/${studentId}/image/${frameFile.originalname}`);
+        const watermarkedFrameBuffer = await addTextWatermarkToImage(frameFile.buffer, 'SN MUSIC');
+        imgWatermarkUrl = await uploadFile(watermarkedFrameBuffer, 'images', `student/${eventId}/image/${watermarkedFrameBuffer.originalname}`);
       }
     } else {
       throw new Error('Video file is required.');
@@ -87,8 +90,8 @@ export const createStudents = async (req, res) => {
       studentId: studentId,
       title: title,
       description: description,
-      imageUrl: imageUrl,
-      videoUrl: videoUrl,
+      imageUrl: imgWatermarkUrl,
+      videoUrl: vidWatermarkUrl,
       timestamp: new Date(),
     };
 
@@ -247,17 +250,23 @@ export const updateStudent = async (req, res) => {
 
     let imageUrl = null;
     let videoUrl = null;
+    var watermarkUrl, vidWatermarkUrl, vidWatermark;
 
     if (files.video && files.video.length > 0) {
       const videoFile = files.video[0];
-      videoUrl = await uploadFile(videoFile, 'videos', `student/${studentId}/video/${videoFile.originalname}`);
-      updates.videoUrl = videoUrl;
+      console.log(videoFile);
+      // videoUrl = await uploadFile(videoFile, 'videos', `event/${eventId}/video/${videoFile.originalname}`);
+      vidWatermark = await addTextWatermarkToVideo(videoFile.buffer, 'SN MUSIC')
+      vidWatermarkUrl = await uploadWaterMarkFile(vidWatermark, 'videos', `student/${studentId}/watermark/${videoFile.originalname}`);
+      updates.videoUrl = vidWatermarkUrl;
+    }
 
-      if (files.image && files.image.length > 0) {
-        const imageFile = files.image[0];
-        imageUrl = await uploadFile(imageFile, 'images', `student/${studentId}/image/${imageFile.originalname}`);
-        updates.imageUrl = imageUrl;
-      }
+    if (files.image && files.image.length > 0) {
+      const imageFile = files.image[0];
+      console.log(imageFile);
+      const watermarkedFrameBuffer = await addTextWatermarkToImage(imageFile.buffer, 'SN MUSIC');
+      watermarkUrl = await uploadFile(watermarkedFrameBuffer, 'images', `student/${studentId}/image/${watermarkedFrameBuffer.originalname}`);
+      updates.imageUrl = watermarkUrl;
     }
 
     const student = await updateData(process.env.ourStudentCollection, studentId, updates);
