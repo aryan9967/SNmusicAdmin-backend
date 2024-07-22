@@ -200,6 +200,9 @@ export const readAllEvent = async (req, res) => {
 export const readEventVideo = async (req, res) => {
   try {
     const { eventId } = req.body;
+    if (!eventId) {
+      return res.status(400).send({ message: 'Event id is required' });
+    }
     // var event = await readAllData(process.env.eventsCollection);
     var event = await readFieldData(process.env.eventsCollection, eventId, 'videoUrl');
 

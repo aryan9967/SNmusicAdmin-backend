@@ -114,6 +114,32 @@ export const readAllSubData = async (firstCollectionName, secondCollectionName, 
   }
 };
 
+export const readAllLimitSubData = async (firstCollectionName, secondCollectionName, id, fields) => {
+  try {
+    //Retrieve user data
+    var query = db
+      .collection(firstCollectionName)
+      .doc(id).
+      collection(secondCollectionName).
+      limit(100);
+      // Apply the select if fields are provided
+      if (fields && fields.length > 0) {
+        query = query.select(...fields);
+      }
+      
+      const querySnapshot = await query.get();
+  
+      let queryData = [];
+      querySnapshot.forEach((doc) => {
+        queryData.push(doc.data());
+      });
+  
+      return queryData;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 export const readSingleData = async (collectionName, id) => {
   try {
     console.log(id);
@@ -151,34 +177,18 @@ export const readFieldData = async (collectionName, id, fieldName) => {
   }
 }
 
-export const readSubFieldData = async (collectionName, id, fieldName, subId) => {
+export const readSubFieldData = async (firstCollectionName, secondCollectionName, id, subId, fieldName) => {
   try {
     // Get the document reference
-    const docRef = await db.collection(collectionName).doc(id).get();
-
-    if (!docRef) {
-      console.log('No such document!');
+    const docRef = await db.collection(firstCollectionName).doc(id).collection(secondCollectionName).doc(subId).get();
+    console.log(docRef.data());
+    if (docRef.exists) {
+      const fieldValue = docRef.get(fieldName);
+      return fieldValue;
+    } else {
+      console.log("Document does not exist");
       return null;
     }
-
-    // Get the data from the document
-    const data = docRef.data();
-
-    if (!data || !data[fieldName]) {
-      console.log('No field data found!');
-      return null;
-    }
-
-    // Find the object in the array with the specified imageId
-    const item = data[fieldName].find((item) => item.imageId === subId);
-
-    if (!item) {
-      console.log('No item found with the specified imageId!');
-      return null;
-    }
-
-    // Return the found item
-    return item;
   } catch (error) {
     console.error('Error reading document:', error);
     return null;

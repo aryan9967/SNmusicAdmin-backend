@@ -1,7 +1,8 @@
 import express from 'express';
 import multer from 'multer';
 import { isAdmin, requireSignIn } from '../middleware/authMiddleware.js';
-import { createAlbumFolder, createAlbumItem, deleteAlbumFolder, deleteAlbumItem, readAllAlbumFolder, readAllAlbumItems, readSingleAlbumFolder, readSingleAlbumItem, updateAlbumFolder, updateAlbumItem } from '../controllers/albumController.js';
+import { createAlbumFolder, createAlbumItem, deleteAlbumFolder, deleteAlbumItem, readAlbumItemUrl, readAllAlbumFolder, readAllAlbumItems, readSingleAlbumFolder, readSingleAlbumItem, updateAlbumFolder, updateAlbumItem } from '../controllers/albumController.js';
+import { readSubFieldData } from '../DB/crumd.js';
 // import { create } from '../DB/FCRUD.js';
 
 // Configure multer for file uploads
@@ -34,6 +35,9 @@ router.post('/read-single-album-folder', readSingleAlbumFolder);
 
 //Register Seller || POST
 router.post('/read-single-album-item', readSingleAlbumItem);
+
+//Register Seller || POST
+router.post('/read-album-item-url', readAlbumItemUrl);
 
 //Verify Phone Number || POST
 router.post('/update-album-folder', updateAlbumFolder);
