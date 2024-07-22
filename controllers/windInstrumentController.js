@@ -120,24 +120,14 @@ export const createInstrument = async (req, res) => {
         "message": "instruments read successfully",
         "instrument": [
             {
-            "videoUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/instruments%2F5886b16b-a223-4e30-a58b-21e6e10e6f5c%2Fvideos%2FvidInstrument2.mp4?alt=media&token=7a6af880-03f9-4713-808b-796778ab25d9",
             "instrumentId": "5886b16b-a223-4e30-a58b-21e6e10e6f5c",
             "imageUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/instruments%2F5886b16b-a223-4e30-a58b-21e6e10e6f5c%2Fimages%2Finstrument1.jpg?alt=media&token=ca83de52-70f0-4258-a50b-434dd98f9835",
             "title": "North Indian Bansuri",
-            "timestamp": {
-                "_seconds": 1721375791,
-                "_nanoseconds": 942000000
-            }
             },
             {
-            "videoUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/instruments%2F73f62850-b6a3-4f0d-862c-3916dc4c8a6f%2Fvideos%2FvidInstrument3.mp4?alt=media&token=b016467d-fb40-46bf-aeb3-9f4a7fe1acab",
             "instrumentId": "73f62850-b6a3-4f0d-862c-3916dc4c8a6f",
             "imageUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/instruments%2F73f62850-b6a3-4f0d-862c-3916dc4c8a6f%2Fimages%2Finstrument3.png?alt=media&token=f4b8418d-2423-4eb4-8400-a29f049e957a",
             "title": "Western flute (Key or metal flute)",
-            "timestamp": {
-                "_seconds": 1721376400,
-                "_nanoseconds": 97000000
-            }
             }
         ]
     }
@@ -165,6 +155,43 @@ export const readAllInstrument = async (req, res) => {
         });
     }
 };
+
+//function to read single videoUrl of our instrument details
+/* 
+    request url = http://localhost:8080/api/v1/instrument/read-instrument-video
+    method = POST
+    {
+      "instrumentId": "jjhjhjsagsa" //your doc id
+    }
+    response: {
+      "success": true,
+      "message": "instrument video read successfully",
+      "instrument": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/event%2Fa7c59a85-9090-43d5-b974-36f38ce23197%2Fwatermark%2FvidInstrument2.mp4?alt=media&token=365595af-367a-4fa7-91f5-047044c3c453"
+    }
+*/
+export const readInstrumentVideo = async (req, res) => {
+    try {
+      const { instrumentId } = req.body;
+      if (!instrumentId) {
+        return res.status(400).send({ message: 'instrument id is required' });
+      }
+      // var event = await readAllData(process.env.eventsCollection);
+      var instrument = await readFieldData(process.env.instrumentCollection, instrumentId, 'videoUrl');
+  
+      return res.status(201).send({
+        success: true,
+        message: 'instrument video read successfully',
+        instrument: instrument
+      });
+    } catch (error) {
+      console.error('Error in reading all instrument:', error);
+      return res.status(500).send({
+        success: false,
+        message: 'Error in reading all instrument',
+        error: error.message,
+      });
+    }
+  };
 
 //function to read single document of our Instruments details
 /* 

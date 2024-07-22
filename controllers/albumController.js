@@ -180,7 +180,7 @@ export const createAlbumItem = async (req, res) => {
     await createSubData(process.env.albumFolderCollection, process.env.albumItemCollection, albumFolderId, albumItemId, albumJson);
 
     cache.del('album_item');
-    
+
     res.status(201).send({
       success: true,
       message: 'Album created successfully',
@@ -296,24 +296,14 @@ export const readSingleAlbumFolder = async (req, res) => {
         {
           "albumFolderId": "686554da-5cbb-4200-893a-06a04decaf5f",
           "imageUrl": "bbnbn.com",
-          "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/albums%2F686554da-5cbb-4200-893a-06a04decaf5f%2F8a9ebb00-714f-4ed7-8e89-161e35b38802%2Flogin3c.jpg?alt=media&token=e17fe9f8-1809-4bd5-8e17-1f0f21b91afb",
           "albumItemId": "8a9ebb00-714f-4ed7-8e89-161e35b38802",
           "title": "title1",
-          "timestamp": {
-            "_seconds": 1721331729,
-            "_nanoseconds": 532000000
-          }
         },
         {
           "albumFolderId": "686554da-5cbb-4200-893a-06a04decaf5f",
           "imageUrl": "bbnbn.com",
-          "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/albums%2F686554da-5cbb-4200-893a-06a04decaf5f%2Fbada917a-ca12-4233-a1fe-c1068b6eed3b%2Flogin3c.jpg?alt=media&token=bce53592-88bb-4d11-947f-e1662991f744",
           "albumItemId": "bada917a-ca12-4233-a1fe-c1068b6eed3b",
-          "title": "title2",
-          "timestamp": {
-            "_seconds": 1721332325,
-            "_nanoseconds": 935000000
-          }
+          "title": "title2"
         }
         }
       ]
@@ -391,6 +381,20 @@ export const readSingleAlbumItem = async (req, res) => {
   }
 };
 
+
+//function to read single media url of our album items details
+/* 
+    request url = http://localhost:8080/api/v1/event/read-event-image
+    method = POST
+    {
+      "eventId": "jjhjhjsagsa" //your doc id
+    }
+    response: {
+      "success": true,
+      "message": "album item video read successfully",
+      "albumItem": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/event%2Fa7c59a85-9090-43d5-b974-36f38ce23197%2Fwatermark%2FvidInstrument2.mp4?alt=media&token=365595af-367a-4fa7-91f5-047044c3c453"
+    }
+*/
 export const readAlbumItemUrl = async (req, res) => {
   try {
     const { albumFolderId, albumItemId } = req.body;
@@ -562,7 +566,7 @@ export const updateAlbumItem = async (req, res) => {
   }
 };
 
-//function to update single our Students details
+//function to delete single album folder details
 /* 
     request url = http://localhost:8080/api/v1/album/delete-album-folder
     method = POST
@@ -570,6 +574,7 @@ export const updateAlbumItem = async (req, res) => {
     req.body: {
       "albumFolderId": "albumFolderId"
     }
+    response: 
 */
 
 export const deleteAlbumFolder = async (req, res) => {
@@ -605,7 +610,7 @@ export const deleteAlbumFolder = async (req, res) => {
   }
 };
 
-//function to update single our Students details
+//function to delete single album item details
 /* 
     request url = http://localhost:8080/api/v1/album/delete-album-item
     method = POST
@@ -631,7 +636,7 @@ export const deleteAlbumItem = async (req, res) => {
 
     var albumData = await deleteSubData(process.env.albumFolderCollection, process.env.albumItemCollection, albumFolderId, albumItemId);
     console.log('success');
-    
+
     cache.del('album_item');
 
     return res.status(201).send({

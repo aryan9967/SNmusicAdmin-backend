@@ -1,7 +1,7 @@
 import express from 'express';
 import multer from 'multer';
 import { isAdmin, requireSignIn } from '../middleware/authMiddleware.js';
-import { createInstrument, deleteInstrument, readAllInstrument, readSingleInstrument, updateInstrument } from '../controllers/windInstrumentController.js';
+import { createInstrument, deleteInstrument, readAllInstrument, readInstrumentVideo, readSingleInstrument, updateInstrument } from '../controllers/windInstrumentController.js';
 import { checkcache_for_instrument } from '../middleware/caching_middleware.js';
 
 // Configure multer for file uploads
@@ -22,6 +22,9 @@ router.post('/create-instrument', upload, createInstrument);
 
 //Verify Phone Number || POST
 router.get('/read-all-instrument', checkcache_for_instrument, readAllInstrument);
+
+//Verify Phone Number || POST
+router.post('/read-instrument-video', readInstrumentVideo);
 
 //Verify Phone Number || POST
 router.post('/read-instrument', readSingleInstrument);
