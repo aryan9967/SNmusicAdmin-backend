@@ -39,12 +39,12 @@ const bucket = admin.storage().bucket()
       "success": true,
       "message": "Event created successfully",
       "event": {
-        "eventId": "e0cf3d7b-45db-4f06-aed8-12635f2df232",
-        "title": "title2",
-        "description": "desc2",
-        "imageUrl": "hgjhghj.com" (optional)
-        "videoUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/events%2Fe0cf3d7b-45db-4f06-aed8-12635f2df232%2Fviddemo3.mp4?alt=media&token=99e80870-57ea-4c2c-a7c6-f6403b6f42a4",
-        "timestamp": "2024-07-18T20:50:10.233Z"
+        "eventId": "bb9ee1bc-f704-4aa0-a1cb-fbe255e9c5be",
+        "title": "title9",
+        "description": "desc9",
+        "videoUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/event%2Fbb9ee1bc-f704-4aa0-a1cb-fbe255e9c5be%2Fwatermark%2FvidInstrument2.mp4?alt=media&token=7f2bdbf5-22d5-4d04-8415-1c56ffe9e4e4",
+        "imageUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/event%2Fbb9ee1bc-f704-4aa0-a1cb-fbe255e9c5be%2Fimage%2Fundefined?alt=media&token=f12e8276-8070-4b82-96d0-fd3334c1abb6",
+        "timestamp": "2024-07-22T16:27:20.343Z"
       }
     }
 */
@@ -121,34 +121,20 @@ export const createEvent = async (req, res) => {
 /* 
     request url = http://localhost:8080/api/v1/event/read-all-event
     method = GET
-    response: {
-      "success": true,
-      "message": "events read successfully",
-      "event": [
-        {
-          "eventId": "6638b142-4a0c-4eb8-8ed3-128ec3665e58",
-          "videoUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/events%2F6638b142-4a0c-4eb8-8ed3-128ec3665e58%2Fviddemo1.mp4?alt=media&token=1f1799b7-89d8-4f4d-82b8-8db77e35f5bb",
-          "description": "desc1",
-          "title": "title1",
-          "imageUrl": "hgjhghj.com"
-          "timestamp": {
-            "_seconds": 1721335767,
-            "_nanoseconds": 946000000
-          }
-        },
-        {
-          "eventId": "e0cf3d7b-45db-4f06-aed8-12635f2df232",
-          "videoUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/events%2Fe0cf3d7b-45db-4f06-aed8-12635f2df232%2Fviddemo3.mp4?alt=media&token=99e80870-57ea-4c2c-a7c6-f6403b6f42a4",
-          "description": "desc2",
-          "title": "title2",
-          "imageUrl": "hgjhghj.com"
-          "timestamp": {
-            "_seconds": 1721335810,
-            "_nanoseconds": 233000000
-          }
-        }
-      ]
+    response: [
+    {
+      "eventId": "35e5869f-2e88-4880-8ae8-cff13d140ec9",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/event%2F35e5869f-2e88-4880-8ae8-cff13d140ec9%2Fimage%2Fframe.jpg?alt=media&token=fcdcb285-db66-4a30-992e-3c2d80a9641b",
+      "description": "desc5",
+      "title": "title5"
+    },
+    {
+      "eventId": "44588c1b-125b-44eb-9179-f6c59d9d7344",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/event%2F44588c1b-125b-44eb-9179-f6c59d9d7344%2Fimage%2Fframe.jpg?alt=media&token=ac167b7e-0a3e-49fe-937a-490cd9cefafa",
+      "description": "desc3",
+      "title": "title3"
     }
+  ]
 */
 
 export const readAllEvent = async (req, res) => {
@@ -175,27 +161,17 @@ export const readAllEvent = async (req, res) => {
   }
 };
 
-//function to read single document of our Events details
+//function to read single videoUrl of our Events details
 /* 
-    request url = http://localhost:8080/api/v1/event/read-event
+    request url = http://localhost:8080/api/v1/event/read-event-video
     method = POST
     {
       "eventId": "jjhjhjsagsa" //your doc id
     }
     response: {
       "success": true,
-      "message": "event read successfully",
-      "event": {
-        "eventId": "6638b142-4a0c-4eb8-8ed3-128ec3665e58",
-        "videoUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/events%2F6638b142-4a0c-4eb8-8ed3-128ec3665e58%2Fviddemo1.mp4?alt=media&token=1f1799b7-89d8-4f4d-82b8-8db77e35f5bb",
-        "description": "desc1",
-        "title": "title1",
-        "imageUrl": "hgjhghj.com"
-        "timestamp": {
-          "_seconds": 1721335767,
-          "_nanoseconds": 946000000
-        }
-      }
+      "message": "event video read successfully",
+      "event": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/event%2Fa7c59a85-9090-43d5-b974-36f38ce23197%2Fwatermark%2FvidInstrument2.mp4?alt=media&token=365595af-367a-4fa7-91f5-047044c3c453"
     }
 */
 
@@ -223,6 +199,26 @@ export const readEventVideo = async (req, res) => {
   }
 };
 
+
+//function to read single document of our Students details
+/* 
+    request url = http://localhost:8080/api/v1/student/read-student
+    method = POST
+    {
+      "eventId": "jjhjhjsagsa" //your doc id
+    }
+      response: {
+        "success": true,
+        "message": "Event read successfully",
+        "student": {
+          "studentId": "0cfc8500-8ebd-44ac-b2f8-f46e712e24ed",
+          "videoUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/students%2Fviddemo1.mp4?alt=media&token=c1a87355-2d6e-49f5-b87c-8d67eaf0784b",
+          "description": "gjygkjhjk",
+          "title": "title2",
+          "imageUrl": "hgjhghj.com"
+        }
+      }
+*/
 export const readSingleEvent = async (req, res) => {
   try {
     const { eventId } = req.body;
@@ -348,7 +344,7 @@ export const updateEvent = async (req, res) => {
     }
     response: {
       "success": true,
-      "message": "student deleted successfully",
+      "message": "event deleted successfully",
       "event": {
         "_writeTime": {
           "_seconds": 1721336310,
@@ -370,19 +366,19 @@ export const deleteEvent = async (req, res) => {
 
         return res.status(201).send({
           success: true,
-          message: 'student deleted successfully',
+          message: 'event deleted successfully',
           event: eventData
         });
       }
     } else {
       cache.del('all_events');
 
-      return res.send({ message: "Error while finding student" })
+      return res.send({ message: "Error while finding event" })
     }
     cache.del('all_events');
 
   } catch (error) {
-    console.error('Error in student deletion:', error);
+    console.error('Error in event deletion:', error);
     return res.status(500).send({
       success: false,
       message: 'Error in student deletion',
