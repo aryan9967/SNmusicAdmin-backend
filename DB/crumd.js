@@ -76,12 +76,12 @@ export const readAllData = async (collectionName) => {
 export const readAllLimitData = async (collectionName, fields) => {
   try {
     let query = db.collection(collectionName).limit(100); // Adjust the limit according to your needs
-    
+
     // Apply the select if fields are provided
     if (fields && fields.length > 0) {
       query = query.select(...fields);
     }
-    
+
     const querySnapshot = await query.get();
 
     let queryData = [];
@@ -90,6 +90,40 @@ export const readAllLimitData = async (collectionName, fields) => {
     });
 
     return queryData;
+  } catch (error) {
+    console.error("Error retrieving data:", error);
+    throw error; // Re-throw the error after logging it
+  }
+};
+export const readAllLimitPaginate = async (collectionName, fields, startAfterDoc = null, pageSize = 20) => {
+  try {
+    let query = db.collection(collectionName).limit(pageSize);
+
+    // Apply the select if fields are provided
+    if (fields && fields.length > 0) {
+      query = query.select(...fields);
+    }
+
+    // Apply pagination if startAfterDoc is provided
+    if (startAfterDoc) {
+      query = query.startAfter(startAfterDoc);
+    }
+
+    const querySnapshot = await query.get();
+
+    let queryData = [];
+    querySnapshot.forEach((doc) => {
+      queryData.push(doc.data());
+    });
+
+
+    // Get the last document in the snapshot to use for the next page
+    const lastDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
+
+    return {
+      data: queryData,
+      lastDoc: lastDoc // Return the last document for pagination
+    };
   } catch (error) {
     console.error("Error retrieving data:", error);
     throw error; // Re-throw the error after logging it
@@ -122,19 +156,19 @@ export const readAllLimitSubData = async (firstCollectionName, secondCollectionN
       .doc(id).
       collection(secondCollectionName).
       limit(100);
-      // Apply the select if fields are provided
-      if (fields && fields.length > 0) {
-        query = query.select(...fields);
-      }
-      
-      const querySnapshot = await query.get();
-  
-      let queryData = [];
-      querySnapshot.forEach((doc) => {
-        queryData.push(doc.data());
-      });
-  
-      return queryData;
+    // Apply the select if fields are provided
+    if (fields && fields.length > 0) {
+      query = query.select(...fields);
+    }
+
+    const querySnapshot = await query.get();
+
+    let queryData = [];
+    querySnapshot.forEach((doc) => {
+      queryData.push(doc.data());
+    });
+
+    return queryData;
   } catch (error) {
     console.log(error);
   }
@@ -192,6 +226,30 @@ export const readSubFieldData = async (firstCollectionName, secondCollectionName
   } catch (error) {
     console.error('Error reading document:', error);
     return null;
+  }
+};
+
+export const fetchAndFilter = async (collectionName, keyword, limit = 20) => {
+  try {
+    // Fetch documents with a limit
+    const querySnapshot = await db.collection(collectionName).limit(limit).get();
+
+    let results = [];
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      // Perform keyword filtering on desired fields
+      if (
+        data.title && data.title.includes(keyword) ||
+        data.description && data.description?.includes(keyword)
+      ) {
+        results.push(data);
+      }
+    });
+
+    return results;
+  } catch (error) {
+    console.error("Error fetching documents:", error);
+    throw error; // Re-throw the error after logging it
   }
 };
 
