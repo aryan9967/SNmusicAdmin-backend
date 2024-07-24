@@ -147,7 +147,12 @@ export const readAllStudent = async (req, res) => {
     var student = await readAllLimitData(process.env.ourStudentCollection, ['studentId', 'imageUrl', 'description', 'title']);
     console.log('success');
 
-    cache.put(key, student, CACHE_DURATION)
+    var response = {
+      success: true,
+      message: 'students read successfully',
+      student: student
+    }
+    cache.put(key, response, CACHE_DURATION)
 
     return res.status(201).send({
       success: true,
