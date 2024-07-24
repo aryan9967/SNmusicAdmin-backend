@@ -148,7 +148,12 @@ export const readAllGallery = async (req, res) => {
         var gallery = await readFieldData(process.env.galleryCollection, galleryId, fieldName);
         console.log('success');
 
-        cache.put(key, gallery, CACHE_DURATION)
+        var response = {
+            success: true,
+            message: 'gallery read successfully',
+            gallery: gallery
+        }
+        cache.put(key, response, CACHE_DURATION)
 
         return res.status(201).send({
             success: true,

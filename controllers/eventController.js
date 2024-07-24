@@ -144,7 +144,12 @@ export const readAllEvent = async (req, res) => {
     var event = await readAllLimitData(process.env.eventsCollection, ['eventId', 'imageUrl', 'description', 'title']);
 
     console.log("setting data in cache")
-    cache.put(key, event, CACHE_DURATION)
+    var response = {
+      success: true,
+      message: 'events read successfully',
+      event: event
+    }
+    cache.put(key, response, CACHE_DURATION)
 
     return res.status(201).send({
       success: true,

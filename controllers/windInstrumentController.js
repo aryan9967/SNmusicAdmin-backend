@@ -139,7 +139,12 @@ export const readAllInstrument = async (req, res) => {
         var instrument = await readAllLimitData(process.env.instrumentCollection, ['instrumentId', 'imageUrl', 'title']);
         console.log('success');
 
-        cache.put(key, instrument, CACHE_DURATION)
+        var response = {
+            success: true,
+            message: 'instruments read successfully',
+            instrument: instrument
+        }
+        cache.put(key, response, CACHE_DURATION)
 
         return res.status(201).send({
             success: true,
@@ -171,27 +176,27 @@ export const readAllInstrument = async (req, res) => {
 */
 export const readInstrumentVideo = async (req, res) => {
     try {
-      const { instrumentId } = req.body;
-      if (!instrumentId) {
-        return res.status(400).send({ message: 'instrument id is required' });
-      }
-      // var event = await readAllData(process.env.eventsCollection);
-      var instrument = await readFieldData(process.env.instrumentCollection, instrumentId, 'videoUrl');
-  
-      return res.status(201).send({
-        success: true,
-        message: 'instrument video read successfully',
-        instrument: instrument
-      });
+        const { instrumentId } = req.body;
+        if (!instrumentId) {
+            return res.status(400).send({ message: 'instrument id is required' });
+        }
+        // var event = await readAllData(process.env.eventsCollection);
+        var instrument = await readFieldData(process.env.instrumentCollection, instrumentId, 'videoUrl');
+
+        return res.status(201).send({
+            success: true,
+            message: 'instrument video read successfully',
+            instrument: instrument
+        });
     } catch (error) {
-      console.error('Error in reading all instrument:', error);
-      return res.status(500).send({
-        success: false,
-        message: 'Error in reading all instrument',
-        error: error.message,
-      });
+        console.error('Error in reading all instrument:', error);
+        return res.status(500).send({
+            success: false,
+            message: 'Error in reading all instrument',
+            error: error.message,
+        });
     }
-  };
+};
 
 //function to read single document of our Instruments details
 /* 

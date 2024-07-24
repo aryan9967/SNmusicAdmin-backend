@@ -224,7 +224,12 @@ export const readAllAlbumFolder = async (req, res) => {
     // var albumData = await readAllData(process.env.albumFolderCollection);
     var albumData = await readAllLimitData(process.env.albumFolderCollection, ["albumFolderId", "title"]);
     console.log('success');
-    cache.put(key, albumData, CACHE_DURATION)
+    var response = {
+      success: true,
+      message: 'Album read successfully',
+      albumData: albumData
+    }
+    cache.put(key, response, CACHE_DURATION)
 
     return res.status(201).send({
       success: true,
@@ -320,7 +325,12 @@ export const readAllAlbumItems = async (req, res) => {
     var albumData = await readAllLimitSubData(process.env.albumFolderCollection, process.env.albumItemCollection, albumFolderId, ["albumFolderId", "albumItemId", "imageUrl", "title"]);
     console.log('success');
 
-    cache.put(key, albumData, CACHE_DURATION)
+    var response = {
+      success: true,
+      message: 'Album read successfully',
+      albumItem: albumData
+    }
+    cache.put(key, response, CACHE_DURATION)
 
     return res.status(201).send({
       success: true,
