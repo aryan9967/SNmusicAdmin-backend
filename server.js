@@ -9,6 +9,8 @@ import studentRoutes from './routes/studentRoute.js';
 import eventRoutes from './routes/eventRoute.js';
 import galleryRoutes from './routes/galleryRoute.js';
 import instrumentRoutes from './routes/windInstrumentRoute.js';
+import studyRoutes from './routes/studyRoute.js';
+import accessRoutes from './routes/accessRoute.js';
 // import productRoutes from './routes/productRoutes.js';
 import cors from 'cors';
 import bodyParser from 'body-parser';
@@ -41,6 +43,8 @@ app.use('/api/v1/gallery', galleryRoutes);
 app.use('/api/v1/event', eventRoutes);
 app.use('/api/v1/instrument', instrumentRoutes);
 app.use('/api/v1/student', studentRoutes);
+app.use('/api/v1/study', studyRoutes);
+app.use('/api/v1/access', accessRoutes);
 
 //rest api
 app.get('/', (req, res) => {

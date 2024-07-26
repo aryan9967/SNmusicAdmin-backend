@@ -207,7 +207,7 @@ export const readEventVideo = async (req, res) => {
 
 //function to read single document of our Students details
 /* 
-    request url = http://localhost:8080/api/v1/student/read-student
+    request url = http://localhost:8080/api/v1/event/read-event
     method = POST
     {
       "eventId": "jjhjhjsagsa" //your doc id
@@ -215,7 +215,7 @@ export const readEventVideo = async (req, res) => {
       response: {
         "success": true,
         "message": "Event read successfully",
-        "student": {
+        "event": {
           "studentId": "0cfc8500-8ebd-44ac-b2f8-f46e712e24ed",
           "videoUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/students%2Fviddemo1.mp4?alt=media&token=c1a87355-2d6e-49f5-b87c-8d67eaf0784b",
           "description": "gjygkjhjk",
