@@ -227,7 +227,7 @@ export const readAllAlbumFolder = async (req, res) => {
     var response = {
       success: true,
       message: 'Album read successfully',
-      albumData: albumData
+      albumFolder: albumData
     }
     cache.put(key, response, CACHE_DURATION)
 

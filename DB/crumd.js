@@ -62,6 +62,7 @@ export const readAllData = async (collectionName) => {
     //Retrieve user data
     const querySnapshot = await db
       .collection(collectionName)
+      .limit(100)
       .get();
     let queryData = [];
     querySnapshot.forEach((doc) => {
@@ -215,7 +216,6 @@ export const readSubFieldData = async (firstCollectionName, secondCollectionName
   try {
     // Get the document reference
     const docRef = await db.collection(firstCollectionName).doc(id).collection(secondCollectionName).doc(subId).get();
-    console.log(docRef.data());
     if (docRef.exists) {
       const fieldValue = docRef.get(fieldName);
       return fieldValue;

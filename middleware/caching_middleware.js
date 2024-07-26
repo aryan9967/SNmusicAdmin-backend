@@ -79,4 +79,17 @@ function checkcache_for_instrument(req, res, next){
     }
 }
 
-export { checkcache_for_students, checkcache_for_events, checkcache_for_album_folder, checkcache_for_album_item, checkcache_for_gallery, checkcache_for_instrument}
+function checkcache_for_study(req, res, next){
+    const key = "all_study"
+    const cacheddata = cache.get(key)
+    if(cacheddata){
+        console.log("study is present in cache");
+        res.status(200).send(cacheddata)
+    }
+    else{
+        console.log("study is not present in cache")
+        next()
+    }
+}
+
+export { checkcache_for_students, checkcache_for_events, checkcache_for_album_folder, checkcache_for_album_item, checkcache_for_gallery, checkcache_for_instrument, checkcache_for_study}
