@@ -173,6 +173,7 @@ export const updateAccess = async (req, res) => {
             }
             return item;
         });
+        console.log(updatedData);
 
         var update = await db.collection(process.env.accessCollection).doc(userId).update({ "study": updatedData })
         console.log("success");
