@@ -188,6 +188,7 @@ export const readStudyVideo = async (req, res) => {
     }
     // var study = await readAllData(process.env.studyCollection);
     var study = await readFieldData(process.env.studyCollection, studyId, 'videoUrl');
+    console.log(study);
 
     return res.status(201).send({
       success: true,
