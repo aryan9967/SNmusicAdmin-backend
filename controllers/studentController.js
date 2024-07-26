@@ -8,7 +8,7 @@ import slugify from "slugify";
 import { v4 as uuidv4 } from 'uuid';
 import { uploadVideo } from "../DB/storage.js";
 import cache from "memory-cache"
-import { createData, deleteData, matchData, readAllData, readAllLimitData, readSingleData, updateData } from "../DB/crumd.js";
+import { createData, deleteData, matchData, readAllData, readAllLimitData, readFieldData, readSingleData, updateData } from "../DB/crumd.js";
 import { storage } from "../DB/firebase.js";
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { addTextWatermarkToImage, addTextWatermarkToVideo, extractFrameFromVideo, uploadFile, uploadWaterMarkFile } from "../helper/mediaHelper.js";
@@ -190,12 +190,12 @@ export const readStudentVideo = async (req, res) => {
       return res.status(400).send({ message: 'student id is required' });
     }
     // var event = await readAllData(process.env.eventsCollection);
-    var event = await readFieldData(process.env.ourStudentCollection, studentId, 'videoUrl');
+    var student = await readFieldData(process.env.ourStudentCollection, studentId, 'videoUrl');
 
     return res.status(201).send({
       success: true,
       message: 'student video read successfully',
-      event: event
+      student: student
     });
   } catch (error) {
     console.error('Error in reading all student:', error);
