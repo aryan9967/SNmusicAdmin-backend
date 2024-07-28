@@ -323,8 +323,8 @@ export const changeProfile = async (req, res) => {
 
 export const registerController = async (req, res) => {
   try {
-    const { name, username, password, phone, address } = req.body;
-    const userId = uuidv4();
+    const { name, username, password, address, contact, email, instagram, twitter, whatsapp } = req.body;
+    const adminId = uuidv4();
 
     // Validate email
     // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -340,7 +340,7 @@ export const registerController = async (req, res) => {
     if (!password) {
       return res.send({ message: 'Password is required' });
     }
-    if (!phone || !phoneRegex.test(phone)) {
+    if (!contact || !phoneRegex.test(contact)) {
       return res.send({ message: 'Phone is required' });
     }
     if (!address) {
@@ -369,38 +369,37 @@ export const registerController = async (req, res) => {
       });
     }
 
-    const userJson = {
-      userId: userId,
+    const adminJson = {
+      adminId: adminId,
       name: name,
       username: username,
       password: hashedPassword,
-      phone: phone,
       address: address,
-      study: [],
-      events: [],
-      albums: [],
-      ourStudents: [],
-      windInstruments: [],
-      gallery: [],
-      role: 1,
+      contact: contact,
+      email: email,
+      photoUrl: '',
+      instagram: instagram,
+      twitter: twitter,
+      whatsapp: whatsapp,
+      role: 2,
     };
 
     //token
     const token = await JWT.sign(
-      { id: userJson.userId },
+      { id: adminJson.adminId },
       process.env.JWT_token,
       {
         expiresIn: '3d',
       }
     );
 
-    await db.collection(process.env.adminCollection).doc(userId).set(userJson);
+    await db.collection(process.env.adminCollection).doc(adminId).set(adminJson);
     console.log('success');
 
     return res.status(201).send({
       success: true,
       message: 'User registered successfully',
-      user: userJson,
+      admin: adminJson,
       token
     });
   } catch (error) {
@@ -438,13 +437,13 @@ export const loginController = async (req, res) => {
       .where('username', '==', username)
       .get();
 
-    let userData = null;
+    let adminData = null;
     querySnapshot.forEach((doc) => {
-      userData = doc.data();
+      adminData = doc.data();
     });
 
     //validating user
-    if (!userData) {
+    if (!adminData) {
       return res.status(404).send({
         success: false,
         message: 'User is not registered',
@@ -452,7 +451,7 @@ export const loginController = async (req, res) => {
     }
 
     //comparing user password with hashed/encrypted password
-    const match = await comparePassword(password, userData.password);
+    const match = await comparePassword(password, adminData.password);
 
     //verifying password
     if (!match) {
@@ -464,7 +463,7 @@ export const loginController = async (req, res) => {
 
     //token
     const token = await JWT.sign(
-      { id: userData.userId },
+      { id: adminData.adminId },
       process.env.JWT_token,
       {
         expiresIn: '3d',
@@ -473,18 +472,18 @@ export const loginController = async (req, res) => {
     res.status(200).send({
       success: true,
       message: 'Login successfully',
+
       user: {
-        userId: userData.userId,
-        name: userData.name,
-        username: userData.username,
-        phone: userData.phone,
-        address: userData.address,
-        events: userData.events,
-        albums: userData.albums,
-        ourStudents: userData.ourStudents,
-        windInstruments: userData.windInstruments,
-        gallery: userData.gallery,
-        role: userData.role,
+        adminId: adminData?.adminId,
+        name: adminData?.name,
+        address: adminData?.address,
+        contact: adminData?.contact,
+        email: adminData?.email,
+        instagram: adminData?.instagram,
+        twitter: adminData?.twitter,
+        whatsapp: adminData?.whatsapp,
+        photoUrl: adminData?.photoUrl,
+        role: adminData?.role,
       },
       token,
     });
