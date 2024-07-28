@@ -6,6 +6,7 @@ import {
   adminUpdateController,
   registerController,
   loginController,
+  getAdminDetails,
 } from '../controllers/authController.js';
 import { isAdmin, requireSignIn } from '../middleware/authMiddleware.js';
 import multer, { memoryStorage } from 'multer';
@@ -29,6 +30,9 @@ router.post('/register-auth', registerController);
 //Login User || POST
 router.post('/login-auth', loginController);
 
+//Login User || POST
+router.get('/read-auth', getAdminDetails);
+
 //protected user routing auth
 router.get('/user-auth', requireSignIn, (req, res) => {
   res.status(200).send({ ok: true });
@@ -39,7 +43,7 @@ router.get('/admin-auth', requireSignIn, isAdmin, (req, res) => {
   res.status(200).send({ ok: true });
 });
 
-router.post('/change-profile-img', upload.single('file'),changeProfile)
+router.post('/change-profile-img', upload.single('file'), changeProfile)
 
 router.post('/update-profile', adminUpdateController)
 
