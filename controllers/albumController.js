@@ -44,7 +44,7 @@ const bucket = admin.storage().bucket();
 
 export const createAlbumFolder = async (req, res) => {
   try {
-    const { title, description } = req.body;
+    const { title } = req.body;
 
     const albumFolderId = uuidv4();
     if (!title) {

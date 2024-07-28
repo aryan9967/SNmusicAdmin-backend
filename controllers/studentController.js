@@ -74,7 +74,7 @@ export const createStudents = async (req, res) => {
       if (files.image && files.image.length > 0) {
         const imageFile = files.image[0];
         const watermarkedFrameBuffer = await addTextWatermarkToImage(imageFile.buffer, 'SN MUSIC');
-        imgWatermarkUrl = await uploadFile(watermarkedFrameBuffer, 'images', `student/${eventId}/image/${watermarkedFrameBuffer.originalname}`);
+        imgWatermarkUrl = await uploadFile(watermarkedFrameBuffer, 'images', `student/${studentId}/image/${watermarkedFrameBuffer.originalname}`);
       } else {
         const frameBuffer = await extractFrameFromVideo(videoFile.buffer);
         const frameFile = {
@@ -83,7 +83,7 @@ export const createStudents = async (req, res) => {
           buffer: frameBuffer,
         };
         const watermarkedFrameBuffer = await addTextWatermarkToImage(frameFile.buffer, 'SN MUSIC');
-        imgWatermarkUrl = await uploadFile(watermarkedFrameBuffer, 'images', `student/${eventId}/image/${watermarkedFrameBuffer.originalname}`);
+        imgWatermarkUrl = await uploadFile(watermarkedFrameBuffer, 'images', `student/${studentId}/image/${watermarkedFrameBuffer.originalname}`);
       }
     } else {
       throw new Error('Video file is required.');

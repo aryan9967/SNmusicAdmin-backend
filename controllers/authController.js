@@ -497,3 +497,54 @@ export const loginController = async (req, res) => {
     });
   }
 };
+
+
+//Login User
+export const getAdminDetails = async (req, res) => {
+  try {
+    //Retrieve user data
+    const querySnapshot = await db
+      .collection(process.env.adminCollection)
+      .where('username', '==', 'snmusic@gmail.com')
+      .get();
+
+    let adminData = null;
+    querySnapshot.forEach((doc) => {
+      adminData = doc.data();
+    });
+
+    //validating user
+    if (!adminData) {
+      return res.status(404).send({
+        success: false,
+        message: 'User is not registered',
+      });
+    }
+
+    res.status(200).send({
+      success: true,
+      message: 'read admin successfully',
+
+      user: {
+        adminId: adminData?.adminId,
+        name: adminData?.name,
+        address: adminData?.address,
+        contact: adminData?.contact,
+        email: adminData?.email,
+        instagram: adminData?.instagram,
+        twitter: adminData?.twitter,
+        whatsapp: adminData?.whatsapp,
+        photoUrl: adminData?.photoUrl,
+        role: adminData?.role,
+      }
+    });
+    console.log('success');
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({
+      success: false,
+      message: 'Error in reading admin data',
+      error: error,
+    });
+  }
+};

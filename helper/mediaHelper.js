@@ -237,6 +237,7 @@ export const addTextWatermarkToImage = async (imageBuffer, text) => {
 
 // Function to add watermark to video
 export const addTextWatermarkToVideo = async (fileBuffer, text) => {
+  return fileBuffer;
   const tmpDir = os.tmpdir();
   const inputPath = path.join(tmpDir, `input-${Date.now()}.mp4`);
   const outputPath = path.join(tmpDir, `output-${Date.now()}.mp4`);
