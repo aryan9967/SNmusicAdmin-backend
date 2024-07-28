@@ -8,7 +8,7 @@ import slugify from "slugify";
 import { v4 as uuidv4 } from 'uuid';
 import { uploadVideo } from "../DB/storage.js";
 import cache from "memory-cache"
-import { createData, deleteData, matchData, readAllData, readAllLimitData, readFieldData, readSingleData, updateData } from "../DB/crumd.js";
+import { createData, deleteData, fetchAndFilter, matchData, readAllData, readAllLimitData, readFieldData, readSingleData, updateData } from "../DB/crumd.js";
 import { storage } from "../DB/firebase.js";
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { addTextWatermarkToImage, addTextWatermarkToVideo, extractFrameFromVideo, uploadFile, uploadWaterMarkFile } from "../helper/mediaHelper.js";
@@ -179,6 +179,52 @@ export const readAllEvent = async (req, res) => {
       "event": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/event%2Fa7c59a85-9090-43d5-b974-36f38ce23197%2Fwatermark%2FvidInstrument2.mp4?alt=media&token=365595af-367a-4fa7-91f5-047044c3c453"
     }
 */
+
+
+//function to read single document of our Students details
+/* 
+    request url = http://localhost:8080/api/v1/event/read-event
+    method = POST
+    {
+      "eventId": "jjhjhjsagsa" //your doc id
+    }
+      response: {
+        "success": true,
+        "message": "Event read successfully",
+        "event": {
+          "studentId": "0cfc8500-8ebd-44ac-b2f8-f46e712e24ed",
+          "videoUrl": "https://firebasestorage.googleapis.com/v0/b/snmusic-ca00f.appspot.com/o/students%2Fviddemo1.mp4?alt=media&token=c1a87355-2d6e-49f5-b87c-8d67eaf0784b",
+          "description": "gjygkjhjk",
+          "title": "title2",
+          "imageUrl": "hgjhghj.com"
+        }
+      }
+*/
+export const readKeywordEvent = async (req, res) => {
+  try {
+    const { keyword } = req.body;
+
+    if (!keyword) {
+      return res.status(400).send({ message: 'Error finding event' });
+    }
+
+    var eventData = await fetchAndFilter(process.env.eventsCollection, keyword);
+    console.log('success');
+
+    return res.status(201).send({
+      success: true,
+      message: 'event read successfully',
+      event: eventData
+    });
+  } catch (error) {
+    console.error('Error in reading event:', error);
+    return res.status(500).send({
+      success: false,
+      message: 'Error in reading event',
+      error: error.message,
+    });
+  }
+};
 
 export const readEventVideo = async (req, res) => {
   try {

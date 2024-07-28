@@ -8,7 +8,7 @@ import slugify from "slugify";
 import { v4 as uuidv4 } from 'uuid';
 import { uploadVideo } from "../DB/storage.js";
 import cache from "memory-cache"
-import { createData, deleteData, matchData, readAllData, readAllLimitData, readFieldData, readSingleData, updateData } from "../DB/crumd.js";
+import { createData, deleteData, matchData, readAllData, readAllLimitData, readFieldData, readSingleData, updateData, updateFieldOrderData } from "../DB/crumd.js";
 import { storage } from "../DB/firebase.js";
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { addTextWatermarkToImage, addTextWatermarkToVideo, extractFrameFromVideo, uploadFile, uploadWaterMarkFile } from "../helper/mediaHelper.js";
@@ -237,6 +237,24 @@ export const deleteStudy = async (req, res) => {
         }
         cache.del('all_study');
 
+    } catch (error) {
+        console.error('Error in study deletion:', error);
+        return res.status(500).send({
+            success: false,
+            message: 'Error in student deletion',
+            error: error.message,
+        });
+    }
+};
+
+export const testPreference = async (req, res) => {
+    try {
+        var { previousIndex, newIndex } = req.body;
+
+        var test = await updateFieldOrderData(process.env.eventsCollection, previousIndex, newIndex);
+        res.status(200).send({
+            test: test,
+        })
     } catch (error) {
         console.error('Error in study deletion:', error);
         return res.status(500).send({

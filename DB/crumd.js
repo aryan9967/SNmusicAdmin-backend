@@ -351,6 +351,53 @@ export const updateSubFieldData = async (collectionName, id, fieldName, subId, n
   }
 };
 
+export const updateFieldOrderData = async (collectionName, previousIndex, newIndex) => {
+  try {
+    console.log(collectionName);
+    // Step 1: Fetch documents with the previous preference
+    const snapshot = await db.collection(collectionName)
+      .where('preference', '==', previousIndex)
+      .orderBy("preference", "asc")
+      .startAfter(previousIndex)
+      .endAt(newIndex)
+      .get();
+
+    if (snapshot.empty) {
+      console.log('No matching documents found.');
+      return;
+    }
+
+    // Create a batch to update all documents
+    const batch = db.batch();
+
+    console.log(snapshot.docs.forEach((item) => { console.log(item.data()); }));
+
+  } catch (error) {
+    console.error('Error reading document:', error);
+    return null;
+  }
+};
+
+export const updateMatchData = async (collectionName, key, value, data) => {
+  // Query the document by email
+  const userRef = db.collection(collectionName).where(key, '==', value);
+  const querySnapshot = await userRef.get();
+
+  // Check if the document exists
+  if (querySnapshot.empty) {
+    console.log('No matching document found.');
+    return;
+  }
+
+  // Since email is unique, assume there's only one document to update
+  const doc = querySnapshot.docs[0];
+  const docId = doc.id;
+
+  // Update the document
+  await db.collection(collectionName).doc(docId).update(data);
+  return doc;
+}
+
 export const deleteData = async (collectionName, id) => {
   try {
     const response = await db

@@ -4,6 +4,8 @@ import {
   adminLoginController,
   changeProfile,
   adminUpdateController,
+  registerController,
+  loginController,
 } from '../controllers/authController.js';
 import { isAdmin, requireSignIn } from '../middleware/authMiddleware.js';
 import multer, { memoryStorage } from 'multer';
@@ -20,6 +22,12 @@ router.post('/register-admin', adminRegisterController);
 
 //Login User || POST
 router.post('/login-admin', adminLoginController);
+
+//Register User || POST
+router.post('/register-auth', registerController);
+
+//Login User || POST
+router.post('/login-auth', loginController);
 
 //protected user routing auth
 router.get('/user-auth', requireSignIn, (req, res) => {
