@@ -12,6 +12,7 @@ import { createData, deleteData, matchData, readAllData, readSingleData, updateD
 import { storage } from "../DB/firebase.js";
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { comparePassword, hashPassword } from "../helper/authHelper.js";
+import { faAws } from "@fortawesome/free-brands-svg-icons";
 
 dotenv.config()
 
@@ -548,3 +549,34 @@ export const getAdminDetails = async (req, res) => {
     });
   }
 };
+
+export const getAdminContact = async (req, res) =>{
+  const {contact} = req.body
+  const completeContact = `+91${contact}`
+  try{
+    const snapShot = await db.collection("admin").where('contact', '==', `${completeContact}`).get()
+    if(snapShot.empty){
+      return res.status(401).send("Authorization error")
+    }
+    
+    let databaseContact
+
+    snapShot.forEach((doc)=> {
+      databaseContact = doc.data().contact
+    })
+
+    const response = {
+      success: true,
+      admin : {
+        contact : databaseContact
+      }
+    }
+
+    return res.status(200).send(response)
+  }
+  catch(err){
+    console.error(err)
+    res.status(500).send("Internal server error")
+  }
+  
+}

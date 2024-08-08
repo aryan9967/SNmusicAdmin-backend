@@ -7,6 +7,7 @@ import {
   registerController,
   loginController,
   getAdminDetails,
+  getAdminContact,
 } from '../controllers/authController.js';
 import { isAdmin, requireSignIn } from '../middleware/authMiddleware.js';
 import multer, { memoryStorage } from 'multer';
@@ -46,5 +47,7 @@ router.get('/admin-auth', requireSignIn, isAdmin, (req, res) => {
 router.post('/change-profile-img', upload.single('file'), changeProfile)
 
 router.post('/update-profile', adminUpdateController)
+
+router.post('/admin-contact', getAdminContact)
 
 export default router;
